@@ -1,7 +1,8 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updateTemplateAction, updateAuthorityAction, upsertCompanyAction, addMemberAction, updateOrgAction, type ActionResult } from "@/actions";
+import { updateTemplateAction, createTemplateAction, deleteTemplateAction, addHolidayAction, removeHolidayAction, updateAuthorityAction, upsertCompanyAction, addMemberAction, updateOrgAction, type ActionResult } from "@/actions";
+import { OPTION_SETS, type Options } from "@/lib/options";
 import type { HoldingAuthority, OriginatingCompany, Organisation } from "@/db/schema";
 import { useToast } from "@/components/Toast";
 
@@ -51,7 +52,7 @@ export function OutreachSwitch({ on }: { on: boolean }) {
   return <label className="flex items-center gap-3 text-[15px]"><input type="checkbox" className="w-4 h-4" checked={on} disabled={pending} onChange={e => act(() => updateOrgAction({ outreachEnabled: e.target.checked }))} /><span><b>Outreach is {on ? "on" : "off"}.</b> <span className="meta">{on ? "Email, SMS and e-signature buttons are shown across the app." : "Send buttons are hidden; calls, consent and follow-ups still work. Switch on when your sending address is set up."}</span></span></label>;
 }
 export function OutreachForm({ org }: { org: Organisation }) {
-  const [f, setF] = useState({ fromEmail: org.fromEmail ?? "", replyTo: org.replyTo ?? "", postalAddress: org.postalAddress ?? "", phone: org.phone ?? "", website: org.website ?? "", smsSenderId: org.smsSenderId ?? "", a2aReminderDays: org.a2aReminderDays, infoFollowUpDays: org.infoFollowUpDays, a2aTemplate: org.a2aTemplate ?? "" });
+  const [f, setF] = useState({ fromEmail: org.fromEmail ?? "", replyTo: org.replyTo ?? "", postalAddress: org.postalAddress ?? "", phone: org.phone ?? "", website: org.website ?? "", smsSenderId: org.smsSenderId ?? "", infoFollowUpDays: org.infoFollowUpDays });
   const { act, pending } = useAct(); const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
   return <div className="flex flex-col gap-3.5">
     <div className="grid2">
@@ -61,22 +62,64 @@ export function OutreachForm({ org }: { org: Organisation }) {
       <label className="label">Website<input className="input" value={f.website} onChange={set("website")} /></label>
       <label className="label span2">Postal address<input className="input" value={f.postalAddress} onChange={set("postalAddress")} placeholder="Shown in the footer of every email (Spam Act sender identification)" /></label>
       <label className="label">SMS sender name<input className="input" value={f.smsSenderId} onChange={set("smsSenderId")} maxLength={11} placeholder="MRF" /></label>
-      <label className="label">A2A reminder days<input className="input" value={f.a2aReminderDays} onChange={set("a2aReminderDays")} placeholder="3,6" /><span className="meta font-normal">Days after sending, comma-separated.</span></label>
-      <label className="label">Info email follow-up (days)<input className="input !w-[120px]" type="number" value={f.infoFollowUpDays} onChange={e => setF({ ...f, infoFollowUpDays: Number(e.target.value) })} /></label>
+      <label className="label">Follow-up after Info sent (business days)<input className="input !w-[120px]" type="number" value={f.infoFollowUpDays} onChange={e => setF({ ...f, infoFollowUpDays: Number(e.target.value) })} /><span className="meta font-normal">Picking "Info sent - waiting on response" sets Follow Up = Info Email Sent + this many business days (Decisions 4.7).</span></label>
     </div>
-    <label className="label">Authority to Act wording (e-sign)<textarea className="input !text-[13.5px] font-mono" rows={14} value={f.a2aTemplate} onChange={set("a2aTemplate")} placeholder="Leave blank to use the built-in wording. Placeholders: {{name}} {{org}} {{feePct}} {{date}}" /></label>
-    <div><button className="btn btn-primary" disabled={pending} onClick={() => act(() => updateOrgAction({ ...f, fromEmail: f.fromEmail || null, replyTo: f.replyTo || null, postalAddress: f.postalAddress || null, phone: f.phone || null, website: f.website || null, smsSenderId: f.smsSenderId || null, a2aTemplate: f.a2aTemplate || null }))}>Save outreach settings</button></div>
+    <div><button className="btn btn-primary" disabled={pending} onClick={() => act(() => updateOrgAction({ ...f, fromEmail: f.fromEmail || null, replyTo: f.replyTo || null, postalAddress: f.postalAddress || null, phone: f.phone || null, website: f.website || null, smsSenderId: f.smsSenderId || null }))}>Save outreach settings</button></div>
   </div>;
 }
-export function TemplateEditor({ t }: { t: { key: string; name: string; channel: string; subject: string | null; body: string; active: boolean } }) {
-  const [subject, setSubject] = useState(t.subject ?? ""); const [body, setBody] = useState(t.body); const [open, setOpen] = useState(false); const { act, pending } = useAct();
-  const dirty = subject !== (t.subject ?? "") || body !== t.body;
+export function TemplateEditor({ t, custom }: { t: { key: string; name: string; channel: string; subject: string | null; body: string; active: boolean }; custom?: boolean }) {
+  const [subject, setSubject] = useState(t.subject ?? ""); const [body, setBody] = useState(t.body); const [name, setName] = useState(t.name); const [open, setOpen] = useState(false); const { act, pending } = useAct();
+  const dirty = subject !== (t.subject ?? "") || body !== t.body || name !== t.name;
   return <div className="card-plain">
-    <div className="flex flex-wrap items-center gap-3"><button type="button" className="font-head font-semibold text-[16px] text-left" onClick={() => setOpen(o => !o)}>{open ? "▾" : "▸"} {t.name}</button><span className="chip chip-outline">{t.channel}</span><span className="meta">{t.key}</span><span className="flex-1" /><label className="flex gap-2 items-center text-[14px]"><input type="checkbox" checked={t.active} onChange={e => act(() => updateTemplateAction(t.key, { active: e.target.checked }))} /> Active</label></div>
+    <div className="flex flex-wrap items-center gap-3"><button type="button" className="font-head font-semibold text-[16px] text-left" onClick={() => setOpen(o => !o)}>{open ? "▾" : "▸"} {t.name}</button>{custom && <span className="chip chip-outline">custom</span>}<span className="flex-1" /><label className="flex gap-2 items-center text-[14px]"><input type="checkbox" checked={t.active} onChange={e => act(() => updateTemplateAction(t.key, { active: e.target.checked }))} /> Active</label></div>
     {open && <div className="mt-3 flex flex-col gap-3">
+      <label className="label">Name<input className="input" value={name} onChange={e => setName(e.target.value)} /></label>
       {t.channel === "EMAIL" && <label className="label">Subject<input className="input" value={subject} onChange={e => setSubject(e.target.value)} /></label>}
       <label className="label">Body<textarea className="input !text-[13.5px]" rows={t.channel === "SMS" ? 4 : 12} value={body} onChange={e => setBody(e.target.value)} /></label>
-      <div className="flex gap-2"><button className="btn btn-primary btn-sm" disabled={pending || !dirty} onClick={() => act(() => updateTemplateAction(t.key, { subject: t.channel === "EMAIL" ? subject : null, body }))}>Save</button>{dirty && <button className="btn btn-sm" onClick={() => { setSubject(t.subject ?? ""); setBody(t.body); }}>Reset</button>}</div>
+      <div className="flex gap-2"><button className="btn btn-primary btn-sm" disabled={pending || !dirty} onClick={() => act(() => updateTemplateAction(t.key, { subject: t.channel === "EMAIL" ? subject : null, body, name }))}>Save</button>{dirty && <button className="btn btn-sm" onClick={() => { setSubject(t.subject ?? ""); setBody(t.body); setName(t.name); }}>Reset</button>}{custom && <button className="btn btn-sm btn-danger ml-auto" disabled={pending} onClick={() => { if (confirm(`Delete the template "${t.name}"?`)) act(() => deleteTemplateAction(t.key)); }}>Delete</button>}</div>
     </div>}
+  </div>;
+}
+
+export function NewTemplateForm() {
+  const [open, setOpen] = useState(false); const [name, setName] = useState(""); const [subject, setSubject] = useState(""); const [body, setBody] = useState(""); const { act, pending } = useAct();
+  if (!open) return <button className="btn" onClick={() => setOpen(true)}>Add a template</button>;
+  return <div className="card-plain flex flex-col gap-3">
+    <label className="label">Name<input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Deceased estate — executor letter" /></label>
+    <label className="label">Subject<input className="input" value={subject} onChange={e => setSubject(e.target.value)} /></label>
+    <label className="label">Body<textarea className="input !text-[13.5px]" rows={8} value={body} onChange={e => setBody(e.target.value)} placeholder="Hi {{firstName}}, …" /></label>
+    <div className="flex gap-2"><button className="btn btn-primary btn-sm" disabled={pending || !name.trim() || !body.trim()} onClick={() => act(() => createTemplateAction({ name, subject, body }), () => { setOpen(false); setName(""); setSubject(""); setBody(""); })}>Add template</button><button className="btn btn-sm" onClick={() => setOpen(false)}>Cancel</button></div>
+  </div>;
+}
+export function DropdownEditor({ current }: { current: Options }) {
+  const [vals, setVals] = useState<Record<string, string>>(Object.fromEntries(OPTION_SETS.map(s => [s.key, current[s.key].join("\n")]))); const { act, pending } = useAct();
+  const save = (key: string) => { const list = vals[key].split("\n").map(x => x.trim()).filter(Boolean); act(() => updateOrgAction({ options: { ...Object.fromEntries(OPTION_SETS.map(s => [s.key, current[s.key]])), [key]: list } })); };
+  return <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{OPTION_SETS.map(s => <div key={s.key} className="card-plain">
+    <div className="font-head font-semibold">{s.label}</div><div className="meta mb-2">{s.help} One per line; order is the order shown.</div>
+    <textarea className="input !text-[13.5px]" rows={Math.min(10, Math.max(4, vals[s.key].split("\n").length + 1))} value={vals[s.key]} onChange={e => setVals({ ...vals, [s.key]: e.target.value })} />
+    <div className="flex gap-2 mt-2"><button className="btn btn-sm btn-primary" disabled={pending || vals[s.key] === current[s.key].join("\n")} onClick={() => save(s.key)}>Save</button><button className="btn btn-sm" onClick={() => setVals({ ...vals, [s.key]: s.defaults.join("\n") })}>Reset to built-in</button></div>
+  </div>)}</div>;
+}
+export function DefaultOwnerSelect({ value, codes }: { value: string | null; codes: string[] }) {
+  const { act, pending } = useAct();
+  return <select className="input !w-auto" value={value ?? ""} disabled={pending} onChange={e => act(() => updateOrgAction({ defaultOwnerCode: e.target.value || null }))}><option value="">(whoever creates the record)</option>{codes.map(c => <option key={c}>{c}</option>)}</select>;
+}
+export function HolidayAdmin({ rows }: { rows: { date: string; region: string; name: string }[] }) {
+  const [f, setF] = useState({ date: "", region: "NAT", name: "" }); const [year, setYear] = useState(String(new Date().getFullYear())); const { act, pending } = useAct();
+  const years = Array.from(new Set(rows.map(r => r.date.slice(0, 4)))).sort();
+  const shown = rows.filter(r => r.date.startsWith(year));
+  return <div>
+    <div className="flex flex-wrap items-end gap-2.5 mb-3">
+      <label className="label">Year<select className="input !w-auto" value={year} onChange={e => setYear(e.target.value)}>{years.map(y => <option key={y}>{y}</option>)}</select></label>
+      <span className="flex-1" />
+      <label className="label">Date<input type="date" className="input !w-[160px]" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} /></label>
+      <label className="label">Region<select className="input !w-auto" value={f.region} onChange={e => setF({ ...f, region: e.target.value })}>{["NAT", "NSW", "VIC", "QLD", "SA", "WA", "TAS", "ACT", "NT"].map(r => <option key={r}>{r}</option>)}</select></label>
+      <label className="label">Name<input className="input !w-[220px]" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="e.g. King's Birthday" /></label>
+      <button className="btn btn-sm btn-primary" disabled={pending || !f.date} onClick={() => act(() => addHolidayAction(f), () => setF({ date: "", region: "NAT", name: "" }))}>Add holiday</button>
+    </div>
+    <div className="overflow-x-auto -mx-2"><table className="tbl"><thead><tr><th>Date</th><th>Region</th><th>Name</th><th></th></tr></thead><tbody>
+      {shown.map(r => <tr key={r.date + r.region}><td className="whitespace-nowrap">{r.date.split("-").reverse().join("/")}</td><td>{r.region}</td><td>{r.name}</td><td className="text-right"><button className="btn btn-sm btn-danger" disabled={pending} onClick={() => act(() => removeHolidayAction(r.date, r.region))}>Remove</button></td></tr>)}
+      {!shown.length && <tr><td colSpan={4} className="meta">No holidays loaded for {year} — add them above.</td></tr>}
+    </tbody></table></div>
   </div>;
 }

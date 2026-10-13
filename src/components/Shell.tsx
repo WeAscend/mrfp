@@ -3,6 +3,8 @@ import Image from "next/image";
 import type { Tenant } from "@/lib/tenant";
 import { SearchBox } from "./SearchBox";
 import { SideNav, UserMenu } from "./NavClient";
+import { OptionsProvider } from "./Options";
+import { opts } from "@/lib/options";
 
 /** App frame: brand block + navigation down the left, search and account across the top, calm content area. */
 export function Shell({ t, due, children }: { t: Tenant; due: number; children: React.ReactNode }) {
@@ -12,7 +14,7 @@ export function Shell({ t, due, children }: { t: Tenant; due: number; children: 
     { label: "Setup", items: [{ href: "/import", label: "Import leads" }, ...(t.isAdmin ? [{ href: "/settings", label: "Settings" }] : [])] },
   ];
   return (
-    <div className="h-screen grid grid-cols-1 md:grid-cols-[var(--navW)_1fr] grid-rows-[var(--topH)_auto_1fr] md:grid-rows-[var(--topH)_1fr]">
+    <OptionsProvider value={opts(t.org)}><div className="h-screen grid grid-cols-1 md:grid-cols-[var(--navW)_1fr] grid-rows-[var(--topH)_auto_1fr] md:grid-rows-[var(--topH)_1fr]">
       <Link href="/today" aria-label="Home" className="brand hidden md:flex row-span-1 md:row-start-1 md:col-start-1 items-center gap-3 px-5 border-b border-r border-line no-underline">
         <Image src="/brand/mark.png" alt="" width={34} height={34} className="h-[34px] w-[34px]" priority />
         <span className="leading-none"><span className="block font-head font-semibold text-[15.5px] tracking-[-.01em] text-ink">My Refund Finder</span><span className="block text-[11.5px] text-ink3 mt-1">{t.org.shortName} workspace</span></span>
@@ -27,6 +29,6 @@ export function Shell({ t, due, children }: { t: Tenant; due: number; children: 
       <main className="overflow-y-auto overflow-x-hidden bg-bg md:col-start-2 md:row-start-2">
         <div className="px-4 sm:px-10 py-6 sm:py-9 max-w-[1240px]">{children}</div>
       </main>
-    </div>
+    </div></OptionsProvider>
   );
 }

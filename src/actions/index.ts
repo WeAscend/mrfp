@@ -11,6 +11,7 @@ import * as Claims from "@/lib/services/claims";
 import * as Org from "@/lib/services/org";
 import * as Imp from "@/lib/services/leadImport";
 import * as Comms from "@/lib/services/comms";
+import * as Forms from "@/lib/services/forms";
 import { db, schema } from "@/db";
 import { storage, safeName } from "@/lib/storage";
 import { logActivity } from "@/lib/tenant";
@@ -88,10 +89,19 @@ export async function updateOrgAction(patch: Parameters<typeof Org.updateOrg>[1]
 // ---- communications & automation ----
 export async function logCallAction(clientId: string, input: Comms.CallInput) { const t = await requireTenant(); const r = await run(() => Comms.logCall(t, clientId, input), "Call logged"); refresh(); return r; }
 export async function recordConsentAction(clientId: string, channel: Comms.Channel, granted: boolean, method: string, note?: string) { const t = await requireTenant(); const r = await run(() => Comms.recordConsent(t, clientId, channel, granted, method, note), granted ? "Consent recorded" : "Opt-out recorded"); refresh(); return r; }
-export async function previewMessageAction(clientId: string, key: string, claimId?: string | null) { const t = await requireTenant(); return run(() => Comms.preview(t, clientId, key, claimId)); }
+export async function previewMessageAction(clientId: string, key: string, claimId?: string | null, withFooter = true) { const t = await requireTenant(); return run(() => Comms.preview(t, clientId, key, claimId, {}, withFooter)); }
 export async function sendMessageAction(input: Comms.SendOpts) { const t = await requireTenant(); const r = await run(() => Comms.sendToClient(t, input), "Sent"); refresh(); return r; }
-export async function chaseAuthorityAction(claimId: string, opts?: { to?: string; overrideBody?: string; overrideSubject?: string }) { const t = await requireTenant(); const r = await run(() => Comms.chaseAuthority(t, claimId, opts), "Chase email sent"); refresh(); return r; }
-export async function sendA2AAction(clientId: string, via: "EMAIL" | "SMS" | "BOTH", feePct: number, claimId?: string | null) { const t = await requireTenant(); const r = await run(() => Comms.createSignRequest(t, clientId, { via, feePct, claimId }), "Authority to Act sent for signature"); refresh(); return r; }
-export async function cancelSignRequestAction(id: string) { const t = await requireTenant(); const r = await run(() => Comms.cancelSignRequest(t, id), "Cancelled"); refresh(); return r; }
-export async function updateTemplateAction(key: string, patch: { subject?: string | null; body?: string; active?: boolean }) { const t = await requireAdmin(); const r = await run(() => Comms.updateTemplate(t, key, patch), "Template saved"); refresh(); return r; }
-export async function runAutomationNowAction() { const t = await requireAdmin(); const r = await run(() => Comms.runDaily(t.org.id), "Automation run"); refresh(); return r; }
+export async function createTemplateAction(i: { name: string; subject?: string | null; body: string }) { const t = await requireAdmin(); const r = await run(() => Comms.createTemplate(t, i), "Template added"); refresh(); return r; }
+export async function deleteTemplateAction(key: string) { const t = await requireAdmin(); const r = await run(() => Comms.deleteTemplate(t, key), "Template deleted"); refresh(); return r; }
+export async function addHolidayAction(h: { date: string; region: string; name: string }) { const t = await requireAdmin(); const r = await run(() => Org.addHoliday(t, h), "Holiday added"); refresh(); return r; }
+export async function removeHolidayAction(date: string, region: string) { const t = await requireAdmin(); const r = await run(() => Org.removeHoliday(t, date, region), "Holiday removed"); refresh(); return r; }
+export async function updateTemplateAction(key: string, patch: { subject?: string | null; body?: string; active?: boolean; name?: string }) { const t = await requireAdmin(); const r = await run(() => Comms.updateTemplate(t, key, patch), "Template saved"); refresh(); return r; }
+
+// ---- fillable PDF forms (Decisions 6.5) ----
+export async function addFormAction(form: FormData) {
+  const t = await requireAdmin();
+  const r = await run(async () => { const file = form.get("file"); if (!(file instanceof File) || !file.size) throw new Error("Choose a PDF"); if (file.size > 15 * 1024 * 1024) throw new Error("PDFs up to 15 MB"); return Forms.addForm(t, { name: String(form.get("name") || ""), fileName: file.name, buf: Buffer.from(await file.arrayBuffer()), scope: String(form.get("scope")) === "CLIENT" ? "CLIENT" : "CLAIM" }); }, "Form added — now map its fields");
+  refresh(); return r;
+}
+export async function updateFormAction(id: string, patch: { name?: string; mapping?: Record<string, string>; scope?: "CLAIM" | "CLIENT" }) { const t = await requireAdmin(); const r = await run(() => Forms.updateForm(t, id, patch), "Form saved"); refresh(); return r; }
+export async function removeFormAction(id: string) { const t = await requireAdmin(); const r = await run(() => Forms.removeForm(t, id), "Form removed"); refresh(); return r; }

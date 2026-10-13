@@ -44,7 +44,7 @@ export async function updateClientField(t: Tenant, id: string, field: string, va
 export async function setLeadIdentifier(t: Tenant, id: string, v: string | null) {
   const c = await db.query.clients.findFirst({ where: ownClient(t.org.id, id) }); if (!c) throw new Error("Client not found");
   const set: Partial<schema.Client> = { leadIdentifier: v || null };
-  if (v === "Info sent - waiting on response" && !c.infoEmailSent) set.infoEmailSent = t.today;
+  if (v === "Info sent - waiting on response") { if (!c.infoEmailSent) set.infoEmailSent = t.today; set.followUp = R.addBusinessDays(set.infoEmailSent ?? c.infoEmailSent!, t.org.infoFollowUpDays, t.holidays); set.followUpSetBy = "Automatic"; if (!c.followUpReason) set.followUpReason = "Follow up on initial email"; } // Decisions 4.7
   if (v === "A2A sent" && !c.a2aSent) set.a2aSent = t.today;
   if (v === "No response - revisit in 3 months" || v === "Leads No List") { set.followUp = R.addMonths(t.today, t.org.revisitMonths); set.followUpSetBy = "Automatic"; if (!c.followUpReason) set.followUpReason = v === "Leads No List" ? "Check back - said no" : "Revisit after no response"; }
   await db.transaction(async tx => {
@@ -81,7 +81,7 @@ export async function recomputeStage(tx: typeof db, t: Tenant, clientId: string)
   if (!ks.length) return;
   const allClosed = ks.every(k => R.isClosed(k));
   if (allClosed && c.stage === "ACTIVE") {
-    const paid = ks.some(k => k.progress != null && R.PAID_STEPS.includes(k.progress));
+    const paid = ks.some(k => k.progress === R.COMPLETED_STEP); // Decisions 1.7: Completed = reached Review Completed
     await tx.update(C).set({ stage: "INACTIVE", becameNonActive: t.today, inactiveReason: paid ? "Completed" : null }).where(eq(C.id, clientId));
     await logActivity(tx, t.org.id, t.membership.userCode, { action: "EDITED", entityType: "Client", entityId: clientId, recordRef: recordRef(c), field: "Stage", oldValue: "Active", newValue: `Inactive${paid ? " (Completed)" : ""}` });
     return "INACTIVE";
@@ -157,7 +157,7 @@ export async function createLead(t: Tenant, input: { clientType: "INDIVIDUAL" | 
   if (!name) throw new Error("A name is needed");
   const amt = R.parseMoney(input.leadAmount);
   return db.transaction(async tx => {
-    const [c] = await tx.insert(C).values({ orgId: t.org.id, clientType: input.clientType, surname: biz ? null : input.surname?.trim(), firstName: biz ? null : input.firstName?.trim() || null, businessNames: biz ? [name] : [], stage: "LEAD", leadIdentifier: "New import", source: input.source, leadAmount: amt == null ? null : amt.toFixed(2), phoneMobile: input.phoneMobile?.trim() || null, email: input.email?.trim() || null, addressOnUCM: input.addressOnUCM?.trim() || null, ownerCode: t.membership.userCode, dateEntered: t.today, lastUpdatedBy: t.membership.userCode }).returning();
+    const [c] = await tx.insert(C).values({ orgId: t.org.id, clientType: input.clientType, surname: biz ? null : input.surname?.trim(), firstName: biz ? null : input.firstName?.trim() || null, businessNames: biz ? [name] : [], stage: "LEAD", leadIdentifier: "New import", source: input.source, leadAmount: amt == null ? null : amt.toFixed(2), phoneMobile: input.phoneMobile?.trim() || null, email: input.email?.trim() || null, addressOnUCM: input.addressOnUCM?.trim() || null, ownerCode: t.org.defaultOwnerCode || t.membership.userCode, dateEntered: t.today, lastUpdatedBy: t.membership.userCode }).returning(); // Decisions 2.6
     await logActivity(tx, t.org.id, t.membership.userCode, { action: "CREATED", entityType: "Client", entityId: c.id, recordRef: recordRef(c), newValue: "New lead" });
     return c;
   });

@@ -3,11 +3,12 @@ import { Section, FollowUpItem, ClaimLink, ClientLink, Empty } from "@/component
 import { DateField, SelectField, Static } from "@/components/fields";
 import { Notes } from "./Notes";
 import { Timeline } from "@/components/Timeline";
-import { ConsentChips, LogCallButton, CancelSignButton } from "@/components/commsClient";
+import { ConsentChips, LogCallButton } from "@/components/commsClient";
 import { firstEmail } from "@/lib/services/comms";
 import type { Ctx } from "./ctx";
+import { opts } from "@/lib/options";
 
-export function SummaryTab({ t, c, fus, byId, related, tl, openSign, emailState, smsState }: Ctx) {
+export function SummaryTab({ t, c, fus, byId, related, tl, emailState, smsState }: Ctx) {
   const open = c.claims.filter(R.isOpen);
   const ids: [string, "idLicence" | "idPassport" | "idMedicare" | "idOther"][] = [["Licence", "idLicence"], ["Passport", "idPassport"], ["Medicare", "idMedicare"], ["Other", "idOther"]];
   return (
@@ -19,7 +20,7 @@ export function SummaryTab({ t, c, fus, byId, related, tl, openSign, emailState,
           {!open.length && <tr><td colSpan={4}><Empty>No open claims.</Empty></td></tr>}
         </tbody></table></div></Section>
         <Notes c={c} t={t} byId={byId} />
-        <Timeline items={tl} right={<span className="inline-flex gap-2 items-center flex-wrap"><ConsentChips clientId={c.id} email={emailState} sms={smsState} compact /><LogCallButton clientId={c.id} hasEmail={!!firstEmail(c.email)} emailState={emailState} label="Log call" />{openSign && <CancelSignButton id={openSign.id} />}</span>} />
+        <Timeline items={tl} right={<span className="inline-flex gap-2 items-center flex-wrap">{t.org.outreachEnabled && <ConsentChips clientId={c.id} email={emailState} sms={smsState} compact />}<LogCallButton clientId={c.id} hasEmail={!!firstEmail(c.email)} emailState={emailState} outreach={t.org.outreachEnabled} label="Log call" /></span>} />
       </div>
       <div className="flex-1 basis-[380px] flex flex-col gap-5 min-w-0">
         <Section title="Contact"><div className="grid2"><Static label="Mobile">{c.phoneMobile}</Static><Static label="Other">{c.phoneOther}</Static><Static label="Email" className="span2">{c.email}</Static><Static label="Current address" className="span2">{c.currentAddress}</Static>{c.clientType === "BUSINESS" && <Static label="Business contact" className="span2">{c.businessContact}</Static>}{c.addressOnUCM && <Static label="Address on UCM" className="span2">{c.addressOnUCM}</Static>}</div></Section>
@@ -27,7 +28,7 @@ export function SummaryTab({ t, c, fus, byId, related, tl, openSign, emailState,
           <div className="grid2 mt-3">{ids.map(([l, k]) => <DateField key={k} kind="client" id={c.id} field={k} label={`${l} received`} value={c[k]} />)}</div></Section>
         <Section title="A2A & related"><div className="grid2"><Static label="A2A Sent">{c.a2aSent ? R.fmtDate(c.a2aSent) : "—"}</Static><Static label="A2A Signed & Received">{c.a2aSigned ? R.fmtDate(c.a2aSigned) : "—"}</Static>
           <Static label="Related clients" className="span2">{related.length ? <span className="inline-flex flex-wrap gap-2">{related.map(r => <ClientLink key={r.id} c={r} />)}</span> : "—"}</Static>
-          {c.stage === "INACTIVE" && <><DateField kind="client" id={c.id} field="becameNonActive" label="Became Non-Active" value={c.becameNonActive} /><SelectField kind="client" id={c.id} field="inactiveReason" label="Inactive Reason" value={c.inactiveReason} options={R.INACTIVE_REASONS} blank="(blank)" /></>}
+          {c.stage === "INACTIVE" && <><DateField kind="client" id={c.id} field="becameNonActive" label="Became Non-Active" value={c.becameNonActive} /><SelectField kind="client" id={c.id} field="inactiveReason" label="Inactive Reason" value={c.inactiveReason} options={opts(t.org).inactiveReasons} blank="(blank)" /></>}
           {c.stage !== "LEAD" && c.leadIdentifier && <Static label="Lead Identifier (history)">{c.leadIdentifier}</Static>}
         </div></Section>
       </div>

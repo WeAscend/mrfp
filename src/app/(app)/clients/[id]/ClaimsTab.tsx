@@ -1,11 +1,12 @@
 import Link from "next/link";
 import * as R from "@/lib/rules";
-import { Section, ClaimLink, ClientLink, Empty } from "@/components/ui";
+import { Section, ClaimLink, ClientLink, Empty, FillFormLinks } from "@/components/ui";
 import { TextField, SelectField, DateField, MoneyField, Static } from "@/components/fields";
 import { OpenClaimForm, ProgressSelect, ChasedButton, AddA2AButton, A2ASignedInput, AddResubmissionButton, MultiLink, FileUpload, BinButton } from "@/components/actionsClient";
 import { Notes } from "./Notes";
-import { SendMessageButton, ChaseEmailButton } from "@/components/commsClient";
+import { PrepareEmailButton } from "@/components/commsClient";
 import type { Ctx } from "./ctx";
+import { opts } from "@/lib/options";
 
 export function ClaimsTab(ctx: Ctx & { focus?: string }) {
   const { t, c, authorities, byId, focus } = ctx;
@@ -22,7 +23,7 @@ export function ClaimsTab(ctx: Ctx & { focus?: string }) {
   );
 }
 
-function ClaimCard({ t, c, k, byId, ocs, others, fus }: Ctx & { k: Ctx["c"]["claims"][number] }) {
+function ClaimCard({ t, c, k, byId, ocs, others, fus, forms }: Ctx & { k: Ctx["c"]["claims"][number] }) {
   const ha = byId[k.authorityId]; const fee = R.feeAUD(k); const g = R.gstBreakdown(fee, k.gstTreatment, Number(t.org.gstRate));
   const kfu = { ...k, resubmissions: k.resubmissions.map(r => r.date), a2aLog: k.a2aLog }; const next = R.nextHAFollowUp(kfu, ha); const latest = R.latestSubmission(kfu);
   const chasedAfter = !!(k.lastChased && latest && k.lastChased >= latest);
@@ -38,7 +39,7 @@ function ClaimCard({ t, c, k, byId, ocs, others, fus }: Ctx & { k: Ctx["c"]["cla
       <div className="flex flex-wrap justify-between gap-x-6 gap-y-3 items-start">
         <div><h2 className="text-[22px] !mb-0">{k.claimId} <span className="meta font-body font-normal text-[15px]">{ha?.name}{k.companies.length ? ` · ${k.companies.map(x => x.company.name).join(", ")}` : ""}</span></h2>
           <div className="meta mt-1">{joint.length > 0 && <>Joint with {joint.map((j, i) => <span key={j.id}>{i > 0 && ", "}<ClientLink c={j} /></span>)} · </>}Last updated by <b>{k.lastUpdatedBy}</b>, {R.fmtDate(k.lastUpdatedAt.toISOString().slice(0, 10))}{k.migratedNo ? ` · Airtable claim no. ${k.migratedNo}` : ""}</div></div>
-        <div className="flex gap-3 items-end flex-wrap"><label className="label uppercase tracking-wider text-[12px] min-w-[300px]">Claim Progress<ProgressSelect claimId={k.id} value={k.progress} org={t.org.shortName} /></label>{t.org.outreachEnabled && k.progress === 4 && <SendMessageButton clientId={c.id} claimId={k.id} templateKey="id_request" label="Email ID request" small />}{t.org.outreachEnabled && k.progress === 11 && <SendMessageButton clientId={c.id} claimId={k.id} templateKey="invoice" label="Email refund & invoice" small />}{t.isAdmin && <BinButton kind="claim" id={k.id} />}</div>
+        <div className="flex gap-3 items-end flex-wrap"><label className="label uppercase tracking-wider text-[12px] min-w-[300px]">Claim Progress<ProgressSelect claimId={k.id} value={k.progress} org={t.org.shortName} /></label><FillFormLinks forms={forms} clientId={c.id} claimId={k.id} />{k.progress === 4 && <PrepareEmailButton clientId={c.id} claimId={k.id} templateKey="id_request" label="Prepare ID request email" small />}{k.progress === 11 && <PrepareEmailButton clientId={c.id} claimId={k.id} templateKey="invoice" label="Prepare refund email" small />}{t.isAdmin && <BinButton kind="claim" id={k.id} />}</div>
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-1 text-[12px] my-4">{R.STEPS.map(([n, l]) => <span key={n} title={l} className={`px-1.5 py-1 rounded-md border ${k.progress && n < k.progress && !R.CLOSING_STEPS.includes(n) ? "bg-lime-soft border-transparent text-ink" : "border-line text-ink3"} ${k.progress === n ? "!bg-lime !border-lime !text-navy font-semibold" : ""}`}>{n} {l.replace("{ORG}", t.org.shortName).slice(0, 22)}{l.length > 22 ? "…" : ""}</span>)}</div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-7 gap-y-5">
@@ -54,7 +55,7 @@ function ClaimCard({ t, c, k, byId, ocs, others, fus }: Ctx & { k: Ctx["c"]["cla
           </div>
           <h3 className="text-[12px] uppercase tracking-wider text-ink3 font-bold mt-4 mb-2.5">Fee</h3>
           <div className="grid3">
-            <TextField kind="claim" id={k.id} field="feePct" label="Fee for Service %" value={k.feePct ? String(Number(k.feePct)) : ""} list={`fees-${k.id}`} /><datalist id={`fees-${k.id}`}>{R.FEE_OPTIONS.map(x => <option key={x} value={x} />)}</datalist>
+            <TextField kind="claim" id={k.id} field="feePct" label="Fee for Service %" value={k.feePct ? String(Number(k.feePct)) : ""} list={`fees-${k.id}`} /><datalist id={`fees-${k.id}`}>{opts(t.org).feeOptions.map(x => <option key={x} value={x} />)}</datalist>
             {k.currency === "NZD" && k.progress !== 12 ? <MoneyField kind="claim" id={k.id} field="feeManual" label="Fee (AUD) — typed" value={k.feeManual} /> : <Static label="Fee (AUD)">{R.money(fee)}</Static>}
             <SelectField kind="claim" id={k.id} field="gstTreatment" label="GST Treatment" value={k.gstTreatment} options={["+ GST", "Inclusive of GST"]} />
             <Static label="Fee ex GST">{R.money(g.exGst)}</Static><Static label="GST">{R.money(g.gst)}</Static><Static label="Total Invoiced"><b>{R.money(g.total)}</b></Static>
@@ -77,8 +78,8 @@ function ClaimCard({ t, c, k, byId, ocs, others, fus }: Ctx & { k: Ctx["c"]["cla
         </div>
         <div>
           <section className="card !p-4"><h2 className="text-[15px]">Follow-ups</h2>
-            {ha?.chaseAfter ? <div className="text-[14px]"><b>Next {ha.name} follow-up:</b> {next ? <span className={next < t.today ? "red" : ""}>{R.fmtDate(next)}{next < t.today ? " · overdue" : ""}</span> : "—"}<div className="meta">{latest ? `Submitted ${R.fmtDate(latest)} + ${ha.chaseAfter} days` : "Not submitted yet"} · last chased {k.lastChased ? `${R.fmtDate(k.lastChased)} by ${k.lastChasedBy}` : "—"}{chasedAfter ? ` → +${ha.rechaseAfter} days` : ""}</div>{next && <span className="inline-flex gap-2 mt-2"><ChasedButton claimId={k.id} />{t.org.outreachEnabled && <ChaseEmailButton claimId={k.id} to={ha?.emails?.[0]} small />}</span>}</div> : <div className="meta">{ha?.name} has no follow-up rule.</div>}
-            <div className="grid2 mt-3"><DateField kind="claim" id={k.id} field="followUp" label="Claim Follow Up" value={k.followUp} /><TextField kind="claim" id={k.id} field="followUpReason" label="Reason" value={k.followUpReason} list="fu-reasons-k" /><datalist id="fu-reasons-k">{R.FOLLOW_UP_REASONS.map(r => <option key={r} value={r} />)}</datalist></div>
+            {ha?.chaseAfter ? <div className="text-[14px]"><b>Next {ha.name} follow-up:</b> {next ? <span className={next < t.today ? "red" : ""}>{R.fmtDate(next)}{next < t.today ? " · overdue" : ""}</span> : "—"}<div className="meta">{latest ? `Submitted ${R.fmtDate(latest)} + ${ha.chaseAfter} days` : "Not submitted yet"} · last chased {k.lastChased ? `${R.fmtDate(k.lastChased)} by ${k.lastChasedBy}` : "—"}{chasedAfter ? ` → +${ha.rechaseAfter} days` : ""}</div>{next && <span className="inline-flex gap-2 mt-2"><ChasedButton claimId={k.id} /><PrepareEmailButton clientId={c.id} claimId={k.id} templateKey="ha_chase" label="Prepare chase email" small /></span>}</div> : <div className="meta">{ha?.name} has no follow-up rule.</div>}
+            <div className="grid2 mt-3"><DateField kind="claim" id={k.id} field="followUp" label="Claim Follow Up" value={k.followUp} /><TextField kind="claim" id={k.id} field="followUpReason" label="Reason" value={k.followUpReason} list="fu-reasons-k" /><datalist id="fu-reasons-k">{opts(t.org).followUpReasons.map(r => <option key={r} value={r} />)}</datalist></div>
           </section>
           <h3 className="text-[12px] uppercase tracking-wider text-ink3 font-bold mt-4 mb-2">Holding Authority screenshot</h3>
           {screenshot ? <a href={`/api/files/${screenshot.id}`} target="_blank" rel="noopener" className="block border border-line rounded-lg overflow-hidden"><img src={`/api/files/${screenshot.id}`} alt={screenshot.name} className="max-h-[220px] w-full object-contain bg-panel" /><div className="meta px-2.5 py-1.5">{screenshot.name} · click to open full size</div></a> : null}

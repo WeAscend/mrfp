@@ -12,7 +12,9 @@ export const STEPS: [number, string][] = [
   [20, "Client went to another MRA"], [21, "No Contact from Client"],
 ];
 export const stepName = (n: number | null | undefined, org = "MRF") => n ? (STEPS.find(s => s[0] === n)?.[1] ?? "").replace("{ORG}", org) : "";
-export const CLOSING_STEPS = [16, 17, 18, 19, 20, 21];
+// Decisions 1.7: step 17 (Review not received) does NOT close the client automatically — staff follow it up and close by hand.
+export const CLOSING_STEPS = [16, 18, 19, 20, 21];
+export const COMPLETED_STEP = 16; // Completed = a claim reached Review Completed
 /** The six stages the Cases board groups the 21 steps into. */
 export const CASE_STAGES: { key: string; label: string; steps: number[]; hint: string }[] = [
   { key: "start", label: "Not started", steps: [1], hint: "Opened, nothing sent yet" },
@@ -20,9 +22,9 @@ export const CASE_STAGES: { key: string; label: string; steps: number[]; hint: s
   { key: "docs", label: "Evidence & forms", steps: [4, 5, 6], hint: "ID & address · authority forms" },
   { key: "ha", label: "With the authority", steps: [7, 8, 9], hint: "Submitted · more info · resent" },
   { key: "refund", label: "Approved & refund", steps: [10, 11, 12], hint: "Approved · refund received" },
-  { key: "invoice", label: "Invoice & review", steps: [13, 14, 15], hint: "Invoice sent · paid · review" },
+  { key: "invoice", label: "Invoice & review", steps: [13, 14, 15, 17], hint: "Invoice sent · paid · review" },
 ];
-export const PAID_STEPS = [14, 15, 16, 17]; // reached MRF Payment Received
+export const PAID_STEPS = [14, 15, 16, 17]; // reached MRF Payment Received (used for reporting, not for Completed)
 export const MANUAL_CLOSE_OPTIONS = [21, 19, 18, 20];
 export const MILESTONE_FIELD: Record<number, string> = { 5: "haFormSent", 6: "haFormSigned", 7: "dateSubmitted", 10: "claimApproved", 11: "refundReceived", 12: "refundReceived", 13: "invoiceSent", 14: "paymentReceived", 15: "reviewRequested", 16: "reviewCompleted" };
 
@@ -93,10 +95,11 @@ export function individualCodeBase(surname: string | null | undefined, firstName
   const init = deaccent(firstName || "").toUpperCase().replace(/[^A-Z]/g, "")[0] || "X";
   return core + init;
 }
-export const STOP_WORDS = ["THE", "PTY", "LTD", "LIMITED", "P/L"]; // Open item: confirm with MT (Holdings, Group, Trading As, Co?)
+export const STOP_WORDS = ["THE", "PTY", "LTD", "LIMITED", "P/L", "CO", "INC"]; // Decisions 2.4: Holdings and Group stay as real words
 export function businessCodeBase(name: string | null | undefined, stopWords = STOP_WORDS) {
   let s = deaccent(name || "").toUpperCase();
   s = s.replace(/\bATF\b.*$/, "");                 // 'ATF' and anything after it ignored
+  s = s.replace(/\b(TRADING AS|T\/A)\b.*$/, "");    // Decisions 2.4: 'Trading As' / 'T/A' and everything after it ignored too
   s = s.replace(/&/g, " ").replace(/\bAND\b/g, " "); // dropped entirely, not a word boundary
   s = s.replace(/[.,()']/g, "");                   // ignored
   const words = s.split(/\s+/).filter(Boolean).filter(w => !stopWords.includes(w)).map(w => w.replace(/[-\/]/g, "")).filter(Boolean);
@@ -141,9 +144,10 @@ export type ClientForFU = { id: string; stage: string; leadIdentifier: string | 
 export type FollowUp = { date: string; kind: "client" | "claim" | "ha" | "a2a"; label: string; sub: string; clientId: string; claimId?: string; setBy: string; overdue: boolean; due: boolean };
 
 export function latestSubmission(k: { dateSubmitted: string | null; resubmissions: string[] }) { return [k.dateSubmitted, ...k.resubmissions].filter((x): x is string => !!x).sort().pop() ?? null; }
-/** Next HA follow-up: only steps 7-9, with a submitted date, authority with a rule. After Chased: chase date + re-chase days. */
+/** Next HA follow-up: steps 7 and 9 only (Decisions 1.4: at step 8 the follow-up disappears and restarts from the resubmission at step 9),
+ *  with a submitted date and an authority with a rule. After Chased: chase date + re-chase days. */
 export function nextHAFollowUp(k: ClaimForFU, a: AuthorityRule | undefined): string | null {
-  if (!k.progress || ![7, 8, 9].includes(k.progress) || !a || !a.chaseAfter) return null;
+  if (!k.progress || ![7, 9].includes(k.progress) || !a || !a.chaseAfter) return null;
   const latest = latestSubmission(k); if (!latest) return null;
   if (k.lastChased && k.lastChased >= latest) return addDays(k.lastChased, a.rechaseAfter || 7);
   return addDays(latest, a.chaseAfter);
@@ -195,5 +199,5 @@ export function importRow(row: Record<string, string>, importDate: string): { le
   }, flags };
 }
 /** Airtable/legacy holding-authority names -> standard names (Spec 9, 10). */
-export const HA_NAME_MAP: Record<string, string> = { "sro victoria": "SRO Vic", "sro vic": "SRO Vic", "treasury sa": "SA Treasury", "sa treasury": "SA Treasury", "wa dept of treasury & finance": "WA Treasury", "wa treasury": "WA Treasury", "asic": "ASIC", "revenue nsw": "Revenue NSW", "pt qld": "PT QLD", "qld public trustee": "PT QLD", "nz ird": "NZ IRD", "ird nz": "NZ IRD", "treasury act": "Treasury ACT", "public trust tasmania": "Public Trust Tasmania" };
+export const HA_NAME_MAP: Record<string, string> = { "sro victoria": "SRO Vic", "sro vic": "SRO Vic", "treasury sa": "SA Treasury", "sa treasury": "SA Treasury", "wa dept of treasury & finance": "WA Treasury", "wa treasury": "WA Treasury", "asic": "ASIC", "revenue nsw": "Revenue NSW", "pt qld": "PT QLD", "qld public trustee": "PT QLD", "nz ird": "NZ IRD", "ird nz": "NZ IRD", "treasury act": "Treasury ACT", "sa": "SA Treasury", "wa": "WA Treasury", "act": "Treasury ACT", "public trust tasmania": "Public Trust Tasmania" };
 export const mapAuthorityName = (s: string) => HA_NAME_MAP[s.trim().toLowerCase()] ?? null;

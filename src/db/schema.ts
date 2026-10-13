@@ -1,6 +1,6 @@
 // MRFP — multi-tenant schema. Every business record carries orgId; all queries go through the tenant-scoped
 // helpers in src/lib/tenant.ts so one organisation can never read another's rows.
-import { pgTable, text, integer, bigserial, boolean, timestamp, date, numeric, pgEnum, primaryKey, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, bigserial, boolean, timestamp, date, numeric, jsonb, pgEnum, primaryKey, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 
@@ -13,7 +13,6 @@ export const clientTypeEnum = pgEnum("client_type", ["INDIVIDUAL", "BUSINESS"]);
 export const actionEnum = pgEnum("action_type", ["CREATED", "EDITED", "DELETED", "RESTORED"]);
 export const channelEnum = pgEnum("channel", ["EMAIL", "SMS"]);
 export const msgStatusEnum = pgEnum("message_status", ["QUEUED", "SENT", "DELIVERED", "OPENED", "BOUNCED", "FAILED", "RECEIVED"]);
-export const signStatusEnum = pgEnum("sign_status", ["SENT", "VIEWED", "SIGNED", "DECLINED", "CANCELLED", "EXPIRED"]);
 
 // ---------------- Tenancy, users, billing ----------------
 export const organisations = pgTable("organisations", {
@@ -35,8 +34,10 @@ export const organisations = pgTable("organisations", {
   smsSenderId: text("sms_sender_id"), // alphanumeric sender shown on the phone, e.g. MRF
   a2aTemplate: text("a2a_template"), // Authority to Act wording for in-house e-sign; placeholders like {{name}}
   a2aReminderDays: text("a2a_reminder_days").notNull().default("3,6"),
-  infoFollowUpDays: integer("info_follow_up_days").notNull().default(7),
-  outreachEnabled: boolean("outreach_enabled").notNull().default(false), // hides email/SMS/e-sign buttons until the business is ready
+  infoFollowUpDays: integer("info_follow_up_days").notNull().default(3), // business days after Info Email Sent (Decisions 4.7)
+  outreachEnabled: boolean("outreach_enabled").notNull().default(false),
+  options: jsonb("options").notNull().default({}), // dropdown overrides, see src/lib/options.ts
+  defaultOwnerCode: text("default_owner_code"), // Decisions 2.6: Owner defaults to this on every new record // hides email/SMS/e-sign buttons until the business is ready
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -337,30 +338,19 @@ export const calls = pgTable("calls", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("calls_client").on(t.clientId)]);
 
-/** In-house e-sign: one request per Authority to Act sent for signature. */
-export const signRequests = pgTable("sign_requests", {
+/** Fillable PDF forms (Decisions 6.5): an uploaded AcroForm PDF plus a mapping from each of its fields to a record field. */
+export const formTemplates = pgTable("form_templates", {
   id: id(),
   orgId: text("org_id").notNull().references(() => organisations.id, { onDelete: "cascade" }),
-  clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
-  claimId: text("claim_id").references(() => claims.id, { onDelete: "set null" }),
-  token: text("token").notNull().unique().$defaultFn(() => createId() + createId()),
-  kind: text("kind").notNull().default("A2A"),
-  status: signStatusEnum("status").notNull().default("SENT"),
-  documentText: text("document_text").notNull(), // the exact wording shown to the signer, rendered at send time
-  signerEmail: text("signer_email"),
-  signerName: text("signer_name"),
-  signerIp: text("signer_ip"),
-  signerAgent: text("signer_agent"),
-  signatureData: text("signature_data"), // data URL of the drawn signature, or typed name
-  attachmentId: text("attachment_id"), // signed PDF stored in attachments
-  remindersSent: integer("reminders_sent").notNull().default(0),
-  lastReminderAt: timestamp("last_reminder_at", { withTimezone: true }),
-  sentBy: text("sent_by").notNull(),
+  name: text("name").notNull(),
+  storageKey: text("storage_key").notNull(),
+  fileName: text("file_name").notNull(),
+  fields: jsonb("fields").notNull().default([]), // [{ name, type, options? }] discovered from the PDF
+  mapping: jsonb("mapping").notNull().default({}), // { pdfFieldName: sourceKey | "text:…" }
+  scope: text("scope").notNull().default("CLAIM"), // CLAIM (needs a claim) | CLIENT
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  viewedAt: timestamp("viewed_at", { withTimezone: true }),
-  signedAt: timestamp("signed_at", { withTimezone: true }),
-  expiresAt: timestamp("expires_at", { withTimezone: true }),
-}, t => [index("sign_client").on(t.clientId), index("sign_org_status").on(t.orgId, t.status)]);
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, t => [index("forms_org").on(t.orgId)]);
 
 export const holidays = pgTable("holidays", {
   date: date("date").notNull(),
@@ -370,7 +360,7 @@ export const holidays = pgTable("holidays", {
 
 // ---------------- relations (for db.query) ----------------
 export const clientRelations = relations(clients, ({ many }) => ({
-  claims: many(claims), notes: many(notes), attachments: many(attachments), searchLog: many(searchLog), messages: many(messages), consents: many(consents), calls: many(calls), signRequests: many(signRequests),
+  claims: many(claims), notes: many(notes), attachments: many(attachments), searchLog: many(searchLog), messages: many(messages), consents: many(consents), calls: many(calls),
   relatedFrom: many(relatedClients, { relationName: "from" }), relatedTo: many(relatedClients, { relationName: "to" }),
 }));
 export const relatedClientRelations = relations(relatedClients, ({ one }) => ({
@@ -401,7 +391,6 @@ export const haRelations = relations(holdingAuthorities, ({ many }) => ({ claims
 export const messageRelations = relations(messages, ({ one }) => ({ client: one(clients, { fields: [messages.clientId], references: [clients.id] }), claim: one(claims, { fields: [messages.claimId], references: [claims.id] }) }));
 export const consentRelations = relations(consents, ({ one }) => ({ client: one(clients, { fields: [consents.clientId], references: [clients.id] }) }));
 export const callRelations = relations(calls, ({ one }) => ({ client: one(clients, { fields: [calls.clientId], references: [clients.id] }) }));
-export const signRequestRelations = relations(signRequests, ({ one }) => ({ client: one(clients, { fields: [signRequests.clientId], references: [clients.id] }), claim: one(claims, { fields: [signRequests.claimId], references: [claims.id] }) }));
 
 export type Client = typeof clients.$inferSelect;
 export type Claim = typeof claims.$inferSelect;
@@ -414,6 +403,6 @@ export type Message = typeof messages.$inferSelect;
 export type MessageTemplate = typeof messageTemplates.$inferSelect;
 export type Consent = typeof consents.$inferSelect;
 export type Call = typeof calls.$inferSelect;
-export type SignRequest = typeof signRequests.$inferSelect;
+export type FormTemplate = typeof formTemplates.$inferSelect;
 export type Organisation = typeof organisations.$inferSelect;
 export const userRelations = relations(users, ({ many }) => ({ memberships: many(memberships) }));

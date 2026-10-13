@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import * as A from "@/actions";
 import * as R from "@/lib/rules";
 import { useToast } from "./Toast";
+import { useOptions } from "./Options";
 
 function useAct() { const { report } = useToast(); const router = useRouter(); const [pending, start] = useTransition(); return { pending, act: (fn: () => Promise<A.ActionResult>, after?: (r: A.ActionResult) => void) => start(async () => { const r = await fn(); if (report(r)) { router.refresh(); after?.(r); } }) }; }
 
@@ -53,20 +54,20 @@ export function OpenClaimForm({ clientId, authorities, disabledReason }: { clien
   );
 }
 export function SetInactiveButton({ clientId, openClaims, name }: { clientId: string; openClaims: number; name: string }) {
-  const [open, setOpen] = useState(false); const [reason, setReason] = useState(""); const [step, setStep] = useState(21); const { act, pending } = useAct();
+  const [open, setOpen] = useState(false); const [reason, setReason] = useState(""); const [step, setStep] = useState(21); const { act, pending } = useAct(); const O = useOptions();
   return (
     <>
       <button className="btn btn-sm btn-danger" onClick={() => setOpen(true)}>Set Inactive</button>
       {open && <Modal title={`Set ${name} Inactive`} onClose={() => setOpen(false)}>
         {openClaims > 0 ? <><p className="mb-2">{openClaims} open claim{openClaims > 1 ? "s" : ""} will be closed. Which closing status applies?</p><label className="label">Closing status<select className="input" value={step} onChange={e => setStep(Number(e.target.value))}>{R.MANUAL_CLOSE_OPTIONS.map(s => <option key={s} value={s}>{s} · {R.stepName(s)}</option>)}</select></label></> : <p className="meta">No open claims.</p>}
-        <label className="label mt-3">Inactive Reason<select className="input" value={reason} onChange={e => setReason(e.target.value)}><option value="">(leave blank)</option>{R.INACTIVE_REASONS.filter(r => r !== "Completed").map(r => <option key={r}>{r}</option>)}</select></label>
+        <label className="label mt-3">Inactive Reason<select className="input" value={reason} onChange={e => setReason(e.target.value)}><option value="">(leave blank)</option>{O.inactiveReasons.filter(r => r !== "Completed").map(r => <option key={r}>{r}</option>)}</select></label>
         <div className="flex justify-end gap-2 mt-4"><button className="btn" onClick={() => setOpen(false)}>Cancel</button><button className="btn btn-danger" disabled={pending} onClick={() => act(() => A.setInactiveAction(clientId, reason || null, step), () => setOpen(false))}>Set Inactive</button></div>
       </Modal>}
     </>
   );
 }
 export function NewLeadButton() {
-  const [open, setOpen] = useState(false); const [f, setF] = useState({ clientType: "INDIVIDUAL" as "INDIVIDUAL" | "BUSINESS", surname: "", firstName: "", businessName: "", source: R.SOURCES[0], leadAmount: "", phoneMobile: "", email: "", addressOnUCM: "" });
+  const O = useOptions(); const [open, setOpen] = useState(false); const [f, setF] = useState({ clientType: "INDIVIDUAL" as "INDIVIDUAL" | "BUSINESS", surname: "", firstName: "", businessName: "", source: O.sources[0], leadAmount: "", phoneMobile: "", email: "", addressOnUCM: "" });
   const { act, pending } = useAct(); const router = useRouter();
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
   return (
@@ -75,7 +76,7 @@ export function NewLeadButton() {
       {open && <Modal title="New lead" onClose={() => setOpen(false)}>
         <div className="grid2">
           <label className="label">Client Type<select className="input" value={f.clientType} onChange={set("clientType")}><option value="INDIVIDUAL">Individual</option><option value="BUSINESS">Business</option></select></label>
-          <label className="label">Source<select className="input" value={f.source} onChange={set("source")}>{R.SOURCES.map(s => <option key={s}>{s}</option>)}</select></label>
+          <label className="label">Source<select className="input" value={f.source} onChange={set("source")}>{O.sources.map(s => <option key={s}>{s}</option>)}</select></label>
           {f.clientType === "BUSINESS" ? <label className="label span2">Business name<input className="input" value={f.businessName} onChange={set("businessName")} /></label> : <><label className="label">Surname<input className="input" value={f.surname} onChange={set("surname")} /></label><label className="label">First Name<input className="input" value={f.firstName} onChange={set("firstName")} /></label></>}
           <label className="label">Lead Amount (estimate)<input className="input" placeholder="$0.00" value={f.leadAmount} onChange={set("leadAmount")} /></label>
           <label className="label">Phone - Mobile<input className="input" value={f.phoneMobile} onChange={set("phoneMobile")} /></label>
@@ -99,12 +100,12 @@ export function FileUpload({ clientId, claimId, label = "Add file", accept, comp
   );
 }
 export function AddA2AButton({ claimId, today }: { claimId: string; today: string }) {
-  const [open, setOpen] = useState(false); const [sent, setSent] = useState(today); const [reason, setReason] = useState(""); const { act, pending } = useAct();
+  const [open, setOpen] = useState(false); const [sent, setSent] = useState(today); const [reason, setReason] = useState(""); const { act, pending } = useAct(); const O = useOptions();
   return <>
     <button className="btn btn-sm" onClick={() => setOpen(true)}>+ Add A2A</button>
     {open && <Modal title="Add A2A entry" onClose={() => setOpen(false)}>
       <p className="meta mb-3">Re-sending the Authority to Act for this same claim (e.g. a new address found, or ASIC requires its own copy). A newly found amount is opened as a new claim instead.</p>
-      <div className="grid2"><label className="label">Sent<input type="date" className="input" value={sent} onChange={e => setSent(e.target.value)} /></label><label className="label">Reason<select className="input" value={reason} onChange={e => setReason(e.target.value)}><option value="">(optional)</option>{R.A2A_REASONS.map(r => <option key={r}>{r}</option>)}</select></label></div>
+      <div className="grid2"><label className="label">Sent<input type="date" className="input" value={sent} onChange={e => setSent(e.target.value)} /></label><label className="label">Reason<select className="input" value={reason} onChange={e => setReason(e.target.value)}><option value="">(optional)</option>{O.a2aReasons.map(r => <option key={r}>{r}</option>)}</select></label></div>
       <div className="flex justify-end gap-2 mt-4"><button className="btn" onClick={() => setOpen(false)}>Cancel</button><button className="btn btn-primary" disabled={pending || !sent} onClick={() => act(() => A.addA2AEntryAction(claimId, sent, reason || null), () => setOpen(false))}>Add</button></div>
     </Modal>}
   </>;

@@ -30,3 +30,10 @@ export const Empty = ({ children }: { children: React.ReactNode }) => <div class
 export const Section = ({ title, children, right, className, id }: { title?: string; children: React.ReactNode; right?: React.ReactNode; className?: string; id?: string }) => (
   <section id={id} className={`card-plain ${className ?? ""}`}>{(title || right) && <div className="flex justify-between items-center gap-3 mb-3.5"><h2 className="!mb-0">{title}</h2>{right}</div>}{children}</section>
 );
+
+/** "Fill form" links for a client/claim: plain downloads of the mapped PDFs (Decisions 6.5). */
+export const FillFormLinks = ({ forms, clientId, claimId }: { forms: { id: string; name: string; scope: string }[]; clientId: string; claimId?: string | null }) => {
+  const list = forms.filter(f => claimId ? true : f.scope === "CLIENT");
+  if (!list.length) return null;
+  return <span className="inline-flex flex-wrap gap-1.5 items-center"><span className="meta">Fill form:</span>{list.map(f => <a key={f.id} href={`/api/forms/${f.id}?client=${clientId}${claimId ? `&claim=${claimId}` : ""}`} className="btn btn-sm">{f.name}</a>)}</span>;
+};

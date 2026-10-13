@@ -18,7 +18,7 @@ describe("Client Code — Appendix A2 businesses", () => {
   it.each([
     ["Boral", "9BORA"], ["BHP", "9BHPX"], ["Smith Constructions Pty Ltd", "9SMCO"], ["Smith Holdings", "9SMHO"], ["Smith & Sons", "9SMSO"],
     ["The Good Guys Electrical", "9GOGU"], ["1300 Plumbing", "913PL"], ["99 Towing", "999TO"], ["24/7 Towing", "924TO"], ["7-Eleven", "97ELX"],
-    ["A Plus Plumbing", "9APLX"], ["EXAMPLE HOLDINGS PTY LTD", "9EXHO"], ["Smith Family ATF Smith Trust", "9SMFA"],
+    ["A Plus Plumbing", "9APLX"], ["EXAMPLE HOLDINGS PTY LTD", "9EXHO"], ["Smith Family ATF Smith Trust", "9SMFA"], ["Jones Co Inc", "9JONE"], ["Bob's Plumbing Trading As Fast Flow", "9BOPL"], ["Acme Group T/A Acme Signs", "9ACGR"],
   ])("%s -> %s", (n, e) => expect(R.businessCodeBase(n)).toBe(e));
 });
 describe("Claim ID", () => {
@@ -44,6 +44,9 @@ describe("Holding Authority follow-up — Spec 8", () => {
   const base = { id: "k", claimId: "X", clientId: "c", authorityId: "a", progress: 7, dateSubmitted: null as string | null, resubmissions: [] as string[], lastChased: null as string | null, followUp: null, followUpReason: null, followUpSetBy: null, a2aLog: [] };
   it("ASIC submitted 68 days ago is due", () => { const sub = R.addDays("2026-10-13", -68); expect(R.nextHAFollowUp({ ...base, dateSubmitted: sub }, asic)! <= "2026-10-13").toBe(true); });
   it("Revenue NSW resubmitted 10 days ago is not due", () => { expect(R.nextHAFollowUp({ ...base, authorityId: "n", progress: 9, dateSubmitted: "2026-04-20", resubmissions: ["2026-10-03"] }, nsw)).toBe("2026-11-09"); });
+  it("step 8 drops off the list; step 9 restarts from the resubmission (Decisions 1.4)", () => { expect(R.nextHAFollowUp({ ...base, progress: 8, dateSubmitted: "2026-01-01" }, asic)).toBeNull(); expect(R.nextHAFollowUp({ ...base, progress: 9, dateSubmitted: "2026-01-01", resubmissions: ["2026-10-01"] }, asic)).toBe(R.addDays("2026-10-01", 67)); });
+  it("step 17 is not a closing step; 16 is Completed (Decisions 1.7)", () => { expect(R.isClosed({ progress: 17 })).toBe(false); expect(R.isClosed({ progress: 16 })).toBe(true); expect(R.COMPLETED_STEP).toBe(16); });
+  it("Search Results short names map to authorities (Decisions 2.5)", () => { expect(R.mapAuthorityName("SA")).toBe("SA Treasury"); expect(R.mapAuthorityName("WA")).toBe("WA Treasury"); expect(R.mapAuthorityName("ACT")).toBe("Treasury ACT"); });
   it("no submitted date never appears; step 10+ leaves", () => { expect(R.nextHAFollowUp(base, asic)).toBeNull(); expect(R.nextHAFollowUp({ ...base, progress: 10, dateSubmitted: "2026-01-01" }, asic)).toBeNull(); });
   it("Chased pushes out by re-chase days", () => expect(R.nextHAFollowUp({ ...base, dateSubmitted: "2026-07-01", lastChased: "2026-10-13" }, asic)).toBe("2026-11-03"));
 });

@@ -25,6 +25,7 @@ export async function signUp(input: { orgName: string; shortName: string; name: 
     const [user] = await tx.insert(schema.users).values({ email, name: input.name.trim(), passwordHash }).returning();
     const userCode = userCodeFor(input.name, new Set());
     const [m] = await tx.insert(schema.memberships).values({ orgId: org.id, userId: user.id, userCode, role: "ADMIN" }).returning();
+    await tx.update(schema.organisations).set({ defaultOwnerCode: userCode }).where(eq(schema.organisations.id, org.id)); // Decisions 2.6
     await tx.insert(schema.holdingAuthorities).values(R.STANDARD_AUTHORITIES.map((a, i) => ({ orgId: org.id, name: a.name, code: a.code, chaseAfter: a.chaseAfter, rechaseAfter: a.rechaseAfter, sortOrder: i })));
     await logActivity(tx, org.id, userCode, { action: "CREATED", entityType: "User", entityId: m.id, recordRef: userCode, newValue: "Organisation created" });
     return { org, user, membership: m };
@@ -76,7 +77,21 @@ export async function upsertCompany(t: Tenant, input: { id?: string; name: strin
     return o.id;
   });
 }
-export async function updateOrg(t: Tenant, patch: { name?: string; shortName?: string; holidayRegions?: string; gstRate?: string; a2aChaseBusinessDays?: number; revisitMonths?: number; fromEmail?: string | null; replyTo?: string | null; postalAddress?: string | null; phone?: string | null; website?: string | null; smsSenderId?: string | null; a2aTemplate?: string | null; a2aReminderDays?: string; infoFollowUpDays?: number; outreachEnabled?: boolean }) {
+export async function updateOrg(t: Tenant, patch: { name?: string; shortName?: string; holidayRegions?: string; gstRate?: string; a2aChaseBusinessDays?: number; revisitMonths?: number; fromEmail?: string | null; replyTo?: string | null; postalAddress?: string | null; phone?: string | null; website?: string | null; smsSenderId?: string | null; a2aTemplate?: string | null; a2aReminderDays?: string; infoFollowUpDays?: number; outreachEnabled?: boolean; options?: Record<string, string[]>; defaultOwnerCode?: string | null }) {
   if (!t.isAdmin) throw new Error("Admin only");
   await db.update(schema.organisations).set(patch).where(eq(schema.organisations.id, t.org.id));
+}
+
+/** Settings › Public holidays (Decisions 3.11, 6.1). Holidays are shared reference data; the bundled list is re-applied on every seed. */
+export async function listHolidays() { return db.select().from(schema.holidays).orderBy(schema.holidays.date, schema.holidays.region); }
+export async function addHoliday(t: Tenant, h: { date: string; region: string; name: string }) {
+  if (!t.isAdmin) throw new Error("Admin only");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(h.date)) throw new Error("Date must be a full date"); const region = h.region.trim().toUpperCase() || "NAT"; const name = h.name.trim() || "Public holiday";
+  await db.insert(schema.holidays).values({ date: h.date, region, name }).onConflictDoUpdate({ target: [schema.holidays.date, schema.holidays.region], set: { name } });
+  await logActivity(db, t.org.id, t.membership.userCode, { action: "CREATED", entityType: "Holiday", recordRef: `${h.date} ${region}`, newValue: name });
+}
+export async function removeHoliday(t: Tenant, date: string, region: string) {
+  if (!t.isAdmin) throw new Error("Admin only");
+  await db.delete(schema.holidays).where(and(eq(schema.holidays.date, date), eq(schema.holidays.region, region)));
+  await logActivity(db, t.org.id, t.membership.userCode, { action: "DELETED", entityType: "Holiday", recordRef: `${date} ${region}` });
 }

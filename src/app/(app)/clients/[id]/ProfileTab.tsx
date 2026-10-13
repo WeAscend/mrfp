@@ -3,6 +3,7 @@ import { Section, Empty } from "@/components/ui";
 import { TextField, TextArea, SelectField, DateField, ChipMulti, MoneyField, Static } from "@/components/fields";
 import { MultiLink, AddSearchButton } from "@/components/actionsClient";
 import type { Ctx } from "./ctx";
+import { opts } from "@/lib/options";
 
 export function ProfileTab({ t, c, others, related, authorities }: Ctx) {
   const biz = c.clientType === "BUSINESS";
@@ -24,7 +25,7 @@ export function ProfileTab({ t, c, others, related, authorities }: Ctx) {
         <Section title="Status & source"><div className="grid2">
           <Static label="Stage">{c.stage === "LEAD" ? "Lead" : c.stage === "ACTIVE" ? "Active" : "Inactive"}</Static><SelectField kind="client" id={c.id} field="source" label="Source" value={c.source} options={R.SOURCES} blank="—" />
           <Static label="Lead Identifier (history)">{c.leadIdentifier || "—"}</Static><DateField kind="client" id={c.id} field="dateEntered" label="Date entered" value={c.dateEntered} />
-          <ChipMulti kind="client" id={c.id} field="specialConditions" label="Special Condition" value={c.specialConditions} options={R.SPECIAL_CONDITIONS} />
+          <ChipMulti kind="client" id={c.id} field="specialConditions" label="Special Condition" value={c.specialConditions} options={opts(t.org).specialConditions} />
           <MoneyField kind="client" id={c.id} field="leadAmount" label="Lead Amount (estimate)" value={c.leadAmount} /><Static label="Info Email Sent">{c.infoEmailSent ? R.fmtDate(c.infoEmailSent) : "—"}</Static>
           <DateField kind="client" id={c.id} field="lastContact" label="Last Contact (editable; a later note replaces it)" value={c.lastContact} />
           <div className="span2"><MultiLink label="Related Client Records" value={related.map(r => r.id)} options={others} target="related" id={c.id} /></div>

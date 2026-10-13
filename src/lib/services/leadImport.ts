@@ -43,7 +43,7 @@ export async function runImport(t: Tenant, text: string, source: string, skip: n
       const L = r.lead;
       const [c] = await tx.insert(schema.clients).values({
         orgId: t.org.id, clientType: L.clientType, surname: L.surname || null, firstName: L.firstName || null, middleName: L.middleName || null, businessNames: L.businessNames,
-        stage: "LEAD", leadIdentifier: "New import", source, ownerCode: t.membership.userCode, leadAmount: L.leadAmount == null ? null : L.leadAmount.toFixed(2), addressOnUCM: L.addressOnUCM || null,
+        stage: "LEAD", leadIdentifier: "New import", source, ownerCode: t.org.defaultOwnerCode || t.membership.userCode, leadAmount: L.leadAmount == null ? null : L.leadAmount.toFixed(2), addressOnUCM: L.addressOnUCM || null,
         specialConditions: L.specialConditions, email: L.email || null, phoneMobile: L.phoneMobile || null, phoneOther: L.phoneOther || null, dob: L.dob, abn: L.abn || null, currentAddress: L.currentAddress || null,
         previousAddresses: L.previousAddresses, lastContact: L.lastContact, dateEntered: t.today, lastUpdatedBy: t.membership.userCode,
       }).returning();

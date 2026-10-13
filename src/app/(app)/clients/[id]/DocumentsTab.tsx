@@ -1,5 +1,5 @@
 import * as R from "@/lib/rules";
-import { Section, Empty } from "@/components/ui";
+import { Section, Empty, FillFormLinks } from "@/components/ui";
 import { FileUpload } from "@/components/actionsClient";
 import type { ClientFull } from "@/lib/services/clients";
 import type { Ctx } from "./ctx";
@@ -18,8 +18,8 @@ export function Attachments({ c, grid }: { c: ClientFull; grid?: boolean }) {
     {files.map(f => <tr key={f.id}><td><a href={`/api/files/${f.id}`} target="_blank" rel="noopener" className="link">{f.name}</a></td><td>{f.mime}</td><td>{kb(f.size)}</td><td>{f.uploadedBy}</td><td>{R.fmtDate(f.createdAt.toISOString().slice(0, 10))}</td><td>{f.claimId ? c.claims.find(k => k.id === f.claimId)?.claimId : "—"}</td></tr>)}
   </tbody></table></div>;
 }
-export function DocumentsTab({ c }: Ctx) {
-  return <Section title="Documents" right={<FileUpload clientId={c.id} compact />}>
+export function DocumentsTab({ c, forms }: Ctx) {
+  return <Section title="Documents" right={<span className="inline-flex gap-3 items-center flex-wrap"><FillFormLinks forms={forms} clientId={c.id} /><FileUpload clientId={c.id} compact /></span>}>
     <p className="meta mb-3">Files are copied into the organisation's own storage and linked to this client. This is the long-term store.</p>
     <Attachments c={c} />
     <div className="mt-3.5"><FileUpload clientId={c.id} label="Drop files here" /></div>

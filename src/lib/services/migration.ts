@@ -27,7 +27,7 @@ const CLIENT_STATUS: Record<string, { stage: "LEAD" | "ACTIVE" | "INACTIVE"; ide
 const LEAD_STATUS: Record<string, string> = { "leads - new": "New import", "lead - green": "Calling", "big fish": "Deep Research", "lead - need more info": "Need more info", "leads - hard to find": "Hard to find", "no": "Leads No List" };
 const CLAIM_STATUS: Record<string, number | null> = { "not started": 1, "authority to act sent": 2, "awaiting id & address evidence": 4, "holding authority forms to be signed": 5, "sent to holding authority": 7, "awaiting more info required for holding authority": 8, "resent to holding authority": 9, "approved - waiting on refund": 10, "refund received": 11, "refund received - no client fee": 12, "mfr payment received": 14, "mrf payment received": 14, "review completed": 16, "unable to claim": 18, "incomplete": 19, "client went to another mra": 20, "no contact from client": 21, "personal details form sent for completion": null };
 
-export async function migrateAirtable(t: Tenant, files: MigrationFiles, ownerCode = t.membership.userCode, migrationDate = t.today): Promise<MigrationReport> {
+export async function migrateAirtable(t: Tenant, files: MigrationFiles, ownerCode = t.org.defaultOwnerCode || t.membership.userCode, migrationDate = t.today): Promise<MigrationReport> {
   const clientsRows = parse(files.clients), leadRows = parse(files.leads), claimRows = parse(files.claims), haocRows = parse(files.haoc);
   const checklist: MigrationReport["checklist"] = [], warnings: string[] = [];
   const MIG = "Migration";

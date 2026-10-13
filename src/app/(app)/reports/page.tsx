@@ -2,19 +2,34 @@ import Link from "next/link";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { requireTenant } from "@/lib/tenant";
-import { activity, listClaims } from "@/lib/services/queries";
-import { members } from "@/lib/services/org";
+import { listClaims } from "@/lib/services/queries";
+import { weeklyReport, weekStart } from "@/lib/services/weekly";
 import * as R from "@/lib/rules";
 import { ClientLink, ClaimLink, Empty } from "@/components/ui";
-import { FilterBar, ExportCsvButton } from "@/components/listClient";
+import { ExportCsvButton } from "@/components/listClient";
 import { PageHead } from "@/components/PageHead";
 
-type SP = { tab?: string; user?: string; entity?: string; ref?: string; from?: string; to?: string };
+type SP = { tab?: string; user?: string; entity?: string; ref?: string; from?: string; to?: string; week?: string; show?: string };
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<SP> }) {
-  const t = await requireTenant(); const sp = await searchParams; const tab = sp.tab || "sources";
-  const tabs = [["sources", "Lead Source"], ["pipeline", "Monthly pipeline"], ["checklist", "Migration check-list"], ...(t.isAdmin ? [["activity", "Activity Log"]] : [])];
+  const t = await requireTenant(); const sp = await searchParams; const tab = sp.tab || "weekly";
+  const tabs = [["weekly", "Weekly report"], ["sources", "Lead Source"], ["pipeline", "Monthly pipeline"], ["checklist", "Migration check-list"]];
   let body: React.ReactNode = null;
-  if (tab === "sources") {
+  if (tab === "weekly") {
+    const start = sp.week && /^\d{4}-\d{2}-\d{2}$/.test(sp.week) ? weekStart(sp.week) : weekStart(t.today);
+    const w = await weeklyReport(t, start); const show = sp.show ? Number(sp.show) : -1;
+    const csv = [["Figure", "Count", "Note"], ...w.figures.map(f => [f.label, String(f.n), f.note])];
+    body = <>
+      <div className="card"><div className="flex flex-wrap justify-between items-center gap-3 mb-3"><h2 className="!mb-0">Week of {R.fmtDate(w.start)} – {R.fmtDate(w.end)}</h2><div className="flex gap-2 items-center"><Link href={`/reports?tab=weekly&week=${R.addDays(start, -7)}`} className="btn btn-sm">‹ Previous week</Link>{w.end < t.today && <Link href={`/reports?tab=weekly&week=${R.addDays(start, 7)}`} className="btn btn-sm">Next week ›</Link>}<Link href="/reports?tab=weekly" className="btn btn-sm">This week</Link><ExportCsvButton rows={csv} filename={`weekly-${w.start}.csv`} /></div></div>
+        <p className="meta mb-3">The eight figures from Decisions 6.2. Click a figure to see the records behind it.</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{w.figures.map((f, i) => <Link key={i} href={`/reports?tab=weekly&week=${start}&show=${i}`} className={`card-plain stat !py-4 no-underline ${show === i ? "!border-ink" : ""}`}><div className="n">{f.n}</div><div className="l">{i + 1}. {f.label}</div><div className="meta mt-1">{f.note}</div></Link>)}</div>
+      </div>
+      {show >= 0 && w.figures[show] && <div className="card mt-5"><h2>{show + 1}. {w.figures[show].label} <span className="meta font-body font-normal">{w.figures[show].n}</span></h2>
+        <div className="overflow-x-auto -mx-2"><table className="tbl"><thead><tr><th>Client</th><th>Claim</th><th>Date</th><th>Detail</th></tr></thead><tbody>
+          {w.figures[show].rows.map((r, i) => <tr key={i}><td><ClientLink c={r.client} /></td><td>{r.claim ? <><ClaimLink clientId={r.client.id} id={r.claim.id} claimId={r.claim.claimId} /> <span className="meta">· {r.claim.authority.name}</span></> : "—"}</td><td className="whitespace-nowrap">{r.date ? R.fmtDate(r.date) : "—"}</td><td>{r.detail || ""}</td></tr>)}
+          {!w.figures[show].rows.length && <tr><td colSpan={4}><Empty>Nothing in this figure.</Empty></td></tr>}
+        </tbody></table></div></div>}
+    </>;
+  } else if (tab === "sources") {
     const cs = await db.select({ source: schema.clients.source, stage: schema.clients.stage }).from(schema.clients).where(and(eq(schema.clients.orgId, t.org.id), isNull(schema.clients.deletedAt)));
     const by: Record<string, { n: number; active: number }> = {}; for (const c of cs) { const k = c.source || "(blank)"; by[k] = by[k] || { n: 0, active: 0 }; by[k].n++; if (c.stage === "ACTIVE") by[k].active++; }
     const max = Math.max(1, ...Object.values(by).map(x => x.n));
@@ -30,13 +45,6 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     const ks = await db.query.claims.findMany({ where: and(eq(schema.claims.orgId, t.org.id), isNull(schema.claims.deletedAt)) });
     const items = [...cs.filter(c => c.checklist).map(c => ({ key: c.id, who: <ClientLink c={c} />, what: c.checklist! })), ...ks.filter(k => k.checklist).map(k => ({ key: k.id, who: <ClaimLink clientId={k.clientId} id={k.id} claimId={k.claimId} />, what: k.checklist! }))];
     body = <div className="card"><h2>Migration check-list</h2><p className="meta mb-3">Things the migration could not decide, to sort out by hand. Clear a record's check-list note on its Profile tab once done.</p><div className="overflow-x-auto -mx-2"><table className="tbl"><thead><tr><th>Record</th><th>What to do</th></tr></thead><tbody>{items.map(i => <tr key={i.key}><td>{i.who}</td><td>{i.what}</td></tr>)}{!items.length && <tr><td colSpan={2}><Empty>Nothing on the check-list.</Empty></td></tr>}</tbody></table></div></div>;
-  } else if (tab === "activity" && t.isAdmin) {
-    const [rows, users] = await Promise.all([activity(t, sp), members(t)]);
-    body = <div className="card"><h2>Activity Log</h2><p className="meta mb-3">Every add, edit and delete, read-only. Claim close dates come from the Claim Progress entries here.</p>
-      <div className="flex flex-wrap items-end gap-2.5 mb-3"><FilterBar base="/reports?tab=activity&" current={sp as Record<string, string>} filters={[{ key: "user", label: "User", options: [...users.map(u => [u.userCode, u.userCode]), ["Migration", "Migration"], ["Import", "Import"]] }, { key: "entity", label: "Entity", options: ["Client", "Claim", "Note", "File", "Holding Authority", "Originating Company", "User"].map(x => [x, x]) }]} dateRange={{ fromKey: "from", toKey: "to", label: "Date" }} /><span className="meta">{rows.length} entries (latest 300)</span></div>
-      <div className="overflow-x-auto -mx-2"><table className="tbl"><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Entity</th><th>Record</th><th>Field</th><th>Old value</th><th>New value</th></tr></thead><tbody>
-        {rows.map(a => <tr key={String(a.id)}><td className="whitespace-nowrap">{a.timestamp.toLocaleString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{a.userCode}</td><td>{a.action.toLowerCase()}</td><td>{a.entityType}</td><td>{a.recordRef}</td><td>{a.field}</td><td className="max-w-[220px] truncate" title={a.oldValue ?? ""}>{a.oldValue}</td><td className="max-w-[260px] truncate" title={a.newValue ?? ""}>{a.newValue}</td></tr>)}
-        {!rows.length && <tr><td colSpan={8}><Empty>No entries.</Empty></td></tr>}</tbody></table></div></div>;
   }
   return <><PageHead title="Reports" lede="Where leads come from, how the pipeline moves, and the audit trail behind every change." /><div className="views mb-3.5"><Link href="/clients">Client reports ›</Link><Link href="/claims">Claim reports ›</Link>{tabs.map(([k, l]) => <Link key={k} href={`/reports?tab=${k}`} className={tab === k ? "on" : ""}>{l}</Link>)}</div>{body}</>;
 }

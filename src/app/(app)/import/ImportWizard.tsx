@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import { previewImportAction, runImportAction } from "@/actions";
 import type { PreviewRow } from "@/lib/services/leadImport";
 import * as R from "@/lib/rules";
+import { useOptions } from "@/components/Options";
 import { useToast } from "@/components/Toast";
 
 export function ImportWizard({ userCode }: { userCode: string }) {
-  const [text, setText] = useState(""); const [source, setSource] = useState(R.SOURCES[0]); const [preview, setPreview] = useState<{ rows: PreviewRow[]; missing: string[]; errors: string[] } | null>(null);
+  const O = useOptions(); const [text, setText] = useState(""); const [source, setSource] = useState(O.sources[0]); const [preview, setPreview] = useState<{ rows: PreviewRow[]; missing: string[]; errors: string[] } | null>(null);
   const [skip, setSkip] = useState<Set<number>>(new Set()); const [pending, start] = useTransition(); const { report, toast } = useToast(); const router = useRouter();
   const doPreview = (t = text) => start(async () => { const r = await previewImportAction(t); if (report(r) && r.ok) { setPreview(r.data as typeof preview); setSkip(new Set()); } });
   const onFile = async (f: File | undefined) => { if (!f) return; const t = await f.text(); setText(t); doPreview(t); };
@@ -19,7 +20,7 @@ export function ImportWizard({ userCode }: { userCode: string }) {
         <p className="meta mb-3">Fixed columns with a header row (Surname, First Name, Middle Name, Search Results, Amount, Last Contact Date, Notes, Status, Address on UCM, Special Condition, Email, Phone - Mobile, Phone - Other, DOB, ABN, Current Address, Previous Address 1-3, Attachments). Values import exactly: amounts with cents, surnames in capitals, register addresses as written.</p>
         <input type="file" accept=".csv,text/csv" className="block mb-3 text-[14px]" onChange={e => onFile(e.target.files?.[0])} />
         <textarea className="input font-mono text-[12px] whitespace-pre" rows={8} placeholder="…or paste the CSV here" value={text} onChange={e => setText(e.target.value)} />
-        <div className="flex flex-wrap items-end gap-2.5 mt-3"><label className="label text-[12px]">Source for this batch<select className="input !w-auto" value={source} onChange={e => setSource(e.target.value)}>{R.SOURCES.map(s => <option key={s}>{s}</option>)}</select></label><button className="btn" disabled={pending || !text.trim()} onClick={() => doPreview()}>Preview</button></div>
+        <div className="flex flex-wrap items-end gap-2.5 mt-3"><label className="label text-[12px]">Source for this batch<select className="input !w-auto" value={source} onChange={e => setSource(e.target.value)}>{O.sources.map(s => <option key={s}>{s}</option>)}</select></label><button className="btn" disabled={pending || !text.trim()} onClick={() => doPreview()}>Preview</button></div>
         {preview?.missing.length ? <div className="warn-box mt-3">Missing columns: {preview.missing.join(", ")}. Check the header row.</div> : null}
         {preview?.errors.length ? <div className="warn-box mt-3">{preview.errors.slice(0, 5).join(" · ")}</div> : null}
       </section>

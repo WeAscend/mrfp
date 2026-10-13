@@ -49,27 +49,41 @@ Any Node host plus a Postgres database works — Vercel + Neon/Supabase, Railway
 
 Sign-up at `/signup` creates an organisation with the standard Holding Authorities, a 30-day trial subscription and the first Admin.
 
-## Outreach, consent and automation
+## Build Decisions Reference (MT, 14 Oct 2026) — what changed
 
-Built for the Spam Act 2003 (Cth): a marketing email or SMS to a client goes out only when consent is recorded on the
-record for that channel and never after an opt-out; every email carries the organisation's identity (Settings › Outreach)
-and an unsubscribe link (`/u/<token>`, plus RFC 8058 one-click), every SMS ends "Reply STOP to opt out" (handled by
-`/api/sms/inbound`). Cold contact stays on the phone (Do Not Call Register washing happens outside the app).
+Where this and the Spec disagree, the Decisions document wins. Implemented:
 
-- **Log a call** (lead screen / summary): outcome buttons set the Lead Identifier and follow-up, tick boxes capture
-  email/SMS consent with who/when/how, and can send the information email in the same step.
-- **Templates** (Settings › Outreach): info email, A2A sign link + reminders, ID request, holding-authority chase,
-  invoice, SMS variants. Plain text with `{{placeholders}}`; previewed and editable before each send.
-- **In-house e-sign** for the Authority to Act: `/sign/<token>` shows the wording from Settings, captures a drawn or
-  typed signature, name, time, IP and device, writes a PDF into Documents, and runs the A2A Signed rule (lead → Active +
-  Client Code). Reminders go on the configured days (`/api/cron/daily`, scheduled in `vercel.json`).
-- **Holding-authority chase by email** from the claim card, Follow-ups or Today: sends the status request and records
-  Chased.
-- **Today** (`/today`): calls to make, A2As awaiting signature, authorities to chase, refunds to invoice.
-- Providers: Resend (`RESEND_API_KEY`, `MAIL_FROM`) and Twilio (`TWILIO_*`). With neither set, messages are recorded
-  with status SENT and printed to the server log so every flow can be exercised locally. Webhooks: `/api/mail/webhook`
-  (delivered / opened / bounced → bounce or complaint records an email opt-out), `/api/sms/inbound`.
-- Browser test of the whole loop: `node scripts/e2e-comms.js` against a seeded server on :3100.
+- **Removed:** online A2A signing, A2A send-by-link and automatic reminders, the "Email chase" button, any sending of
+  email/SMS. The dormant email/SMS plumbing (`src/lib/mail.ts`, `sms.ts`, consent, unsubscribe routes) stays behind
+  Settings › Outreach (later), switched off, for the marketing outreach to be discussed later.
+- **1.4** Holding Authority follow-up covers steps 7 and 9 only; step 8 drops off; step 9 restarts from the resubmission.
+- **1.7** Completed = a claim reached step 16. Step 17 is not a closing step and never sets a client Inactive.
+- **2.4** Stop-words: The, Pty, Ltd, Limited, P/L, Co, Inc; "Trading As" / "T/A" and everything after it ignored (like ATF).
+- **2.5** Search Results SA / WA / ACT map to SA Treasury / WA Treasury / Treasury ACT.
+- **2.6** Owner defaults to Settings › Users › Default owner (set to the first Admin on sign-up); Admin-only to change.
+- **3.7** Fee % options editable under Settings › Dropdown options.
+- **4.7** "Info sent - waiting on response" stamps Info Email Sent and sets Follow Up = Info Email Sent + 3 business days.
+- **4.8 / 6.4** "Prepare … email" buttons fill a template from the record and show it to copy or open in Outlook
+  (`mailto:`). Nothing is sent or drafted by MRFP. Admin edits and adds templates under Settings › Email templates.
+- **4.9** Chased records today's date + user code, adds a note, resets the next follow-up — nothing else.
+- **6.1** Settings holds Users, Dropdown options, Email templates, Holding Authorities & Companies, Public holidays,
+  PDF forms, Organisation, Activity Log, Bin.
+- **6.2** Reports › Weekly report: the eight figures for any Monday–Sunday week, each drill-down to its records, CSV export.
+- **6.5** Settings › PDF forms: upload an editable (AcroForm) PDF, map each field to a client/claim/business value or
+  fixed text, then "Fill form" on a claim card / Documents downloads it filled and still editable. Admin can add forms
+  herself; no developer needed. Scanned or flattened PDFs can't be filled — the upload says so.
+
+## For MT — things the Decisions asked the builder to explain
+
+- **Importing leads:** sidebar › Setup › *Import leads*, or the *Import leads from CSV* button on Leads. Paste or choose
+  the CSV, Preview (duplicates and odd statuses are flagged), untick anything to skip, Import.
+- **Public holidays each year:** Settings › Public holidays. The bundled list covers 2026–2027 (national, NSW, VIC). When
+  a state gazettes next year's dates (usually mid-year), add them there — date, region, name. Business-day counts use the
+  regions in Settings › Organisation.
+- **Backups (hosted on Neon + object storage):** the database is backed up continuously with point-in-time restore
+  (7 days on the free tier, 30 on paid); files in object storage are versioned. A restore is: pick the time in the Neon
+  console → restore to a branch → point the app at it (minutes, not hours). A full restore test is part of go-live.
+- **Dates** show as "14 Oct 2026" in lists and DD/MM/YYYY in date boxes when the browser is set to Australian English.
 
 ## Migrating a business from Airtable
 

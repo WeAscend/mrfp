@@ -3,6 +3,7 @@ import { requireTenant } from "@/lib/tenant";
 import { listClients } from "@/lib/services/queries";
 import { members } from "@/lib/services/org";
 import * as R from "@/lib/rules";
+import { opts } from "@/lib/options";
 import { ClientLink, SCChips, StageChip, ChecklistChip, Overdue, Empty } from "@/components/ui";
 import { FilterBar, ExportCsvButton } from "@/components/listClient";
 import { PageHead } from "@/components/PageHead";
@@ -13,10 +14,11 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const [rows, all, users] = await Promise.all([listClients(t, sp), listClients(t, {}), members(t)]);
   const n = (s: string) => all.filter(c => c.stage === s).length;
   const csv = [["Client name", "Client Code", "Stage", "Lead Identifier / Inactive Reason", "Source", "Special Condition", "Open claims", "Last Contact", "Next follow-up", "Date entered", "Owner"], ...rows.map(c => [R.displayName(c), c.clientCode || "", c.stage, c.leadIdentifier || c.inactiveReason || "", c.source || "", c.specialConditions.join("; "), c.openClaims, c.lastContact || "", c.next?.date || "", c.dateEntered, c.ownerCode])];
+  const O = opts(t.org);
   const filters = [
     { key: "stage", label: "Stage", options: [["LEAD", "Lead"], ["ACTIVE", "Active"], ["INACTIVE", "Inactive"]] },
-    { key: "ident", label: "Identifier / Reason", options: [...R.LEAD_IDENTIFIERS, ...R.INACTIVE_REASONS].map(x => [x, x]) },
-    { key: "source", label: "Source", options: R.SOURCES.map(x => [x, x]) }, { key: "sc", label: "Special Condition", options: R.SPECIAL_CONDITIONS.map(x => [x, x]) },
+    { key: "ident", label: "Identifier / Reason", options: [...R.LEAD_IDENTIFIERS, ...O.inactiveReasons].map(x => [x, x]) },
+    { key: "source", label: "Source", options: O.sources.map(x => [x, x]) }, { key: "sc", label: "Special Condition", options: O.specialConditions.map(x => [x, x]) },
     { key: "owner", label: "Owner", options: users.map(u => [u.userCode, u.userCode]) },
   ];
   return (

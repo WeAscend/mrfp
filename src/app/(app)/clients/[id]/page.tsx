@@ -4,7 +4,8 @@ import { requireTenant } from "@/lib/tenant";
 import { getClient, relatedOf } from "@/lib/services/clients";
 import { authorityMap, companies, claimsForFU } from "@/lib/services/queries";
 import { members } from "@/lib/services/org";
-import { timeline, openSignRequest, channelState } from "@/lib/services/comms";
+import { timeline, channelState } from "@/lib/services/comms";
+import { listForms } from "@/lib/services/forms";
 import { db, schema } from "@/db";
 import { and, eq, isNull, ne } from "drizzle-orm";
 import * as R from "@/lib/rules";
@@ -21,10 +22,10 @@ export default async function ClientPage({ params, searchParams }: { params: Pro
   const t = await requireTenant(); const { id } = await params; const sp = await searchParams;
   const c = await getClient(t, id); if (!c) notFound();
   const [{ list: authorities, byId }, ocs, users, others] = await Promise.all([authorityMap(t), companies(t), members(t), db.select({ id: schema.clients.id, clientType: schema.clients.clientType, surname: schema.clients.surname, firstName: schema.clients.firstName, businessNames: schema.clients.businessNames }).from(schema.clients).where(and(eq(schema.clients.orgId, t.org.id), isNull(schema.clients.deletedAt), ne(schema.clients.id, id)))]);
-  const [kfu, tl, openSign] = await Promise.all([claimsForFU(t, id), timeline(t, id), openSignRequest(t, id)]);
+  const [kfu, tl, forms] = await Promise.all([claimsForFU(t, id), timeline(t, id), listForms(t)]);
   const fus = R.followUpsForClient(c, kfu, byId, t.today, t.holidays, t.org.a2aChaseBusinessDays).map(f => ({ ...f, client: c, claim: f.claimId ? { id: f.claimId, claimId: kfu.find(k => k.id === f.claimId)!.claimId, authorityName: byId[kfu.find(k => k.id === f.claimId)!.authorityId]?.name ?? "" } : undefined }));
   const tab = sp.tab || (c.stage === "LEAD" ? "lead" : "summary");
-  const ctx = { t, c, authorities, byId, ocs, users, others: others.map(o => ({ id: o.id, name: R.displayName(o) })), fus, related: relatedOf(c), tl, openSign: openSign ? { id: openSign.id, status: openSign.status, createdAt: openSign.createdAt.toISOString(), remindersSent: openSign.remindersSent } : null, emailState: channelState(c, "EMAIL"), smsState: channelState(c, "SMS") };
+  const ctx = { t, c, authorities, byId, ocs, users, others: others.map(o => ({ id: o.id, name: R.displayName(o) })), fus, related: relatedOf(c), forms: forms.map(f => ({ id: f.id, name: f.name, scope: f.scope })), tl, emailState: channelState(c, "EMAIL"), smsState: channelState(c, "SMS") };
   if (tab === "lead" && c.stage === "LEAD") return <LeadScreen {...ctx} />;
 
   const open = c.claims.filter(R.isOpen), nf = fus[0];
