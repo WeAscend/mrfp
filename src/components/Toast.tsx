@@ -18,7 +18,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastCtx.Provider value={{ toast, report }}>
       {children}
       <div className="fixed left-1/2 bottom-5 -translate-x-1/2 z-50 flex flex-col gap-2 items-center pointer-events-none" aria-live="polite">
-        {items.map(i => <div key={i.id} className={`px-4 py-2.5 rounded-lg text-[14px] text-white shadow-lg max-w-[90vw] ${i.kind === "err" ? "bg-alert" : "bg-navy"}`}>{i.msg}</div>)}
+        {items.map(i => <div key={i.id} className={`px-4 py-2.5 rounded-lg text-[14px] text-white shadow-lg max-w-[90vw] ${i.kind === "err" ? "bg-red" : "bg-navy"}`}>{i.msg}</div>)}
       </div>
     </ToastCtx.Provider>
   );

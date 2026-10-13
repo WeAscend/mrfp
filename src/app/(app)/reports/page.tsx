@@ -7,6 +7,7 @@ import { members } from "@/lib/services/org";
 import * as R from "@/lib/rules";
 import { ClientLink, ClaimLink, Empty } from "@/components/ui";
 import { FilterBar, ExportCsvButton } from "@/components/listClient";
+import { PageHead } from "@/components/PageHead";
 
 type SP = { tab?: string; user?: string; entity?: string; ref?: string; from?: string; to?: string };
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<SP> }) {
@@ -17,7 +18,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     const cs = await db.select({ source: schema.clients.source, stage: schema.clients.stage }).from(schema.clients).where(and(eq(schema.clients.orgId, t.org.id), isNull(schema.clients.deletedAt)));
     const by: Record<string, { n: number; active: number }> = {}; for (const c of cs) { const k = c.source || "(blank)"; by[k] = by[k] || { n: 0, active: 0 }; by[k].n++; if (c.stage === "ACTIVE") by[k].active++; }
     const max = Math.max(1, ...Object.values(by).map(x => x.n));
-    body = <div className="card"><h2>Lead Source report</h2><p className="meta mb-3">Clients by Source — all stages, with how many are Active now.</p><div className="flex flex-col gap-2">{Object.entries(by).sort((a, b) => b[1].n - a[1].n).map(([s, v]) => <div key={s} className="grid grid-cols-[200px_1fr_80px] gap-3 items-center text-[14px]"><span>{s}</span><div className="bg-chip rounded h-[18px]"><div className="bg-lime h-full rounded" style={{ width: `${v.n / max * 100}%` }} /></div><b className="text-right tabular-nums">{v.n} <span className="meta font-normal">({v.active} active)</span></b></div>)}{!Object.keys(by).length && <Empty>No clients yet.</Empty>}</div></div>;
+    body = <div className="card"><h2>Lead Source report</h2><p className="meta mb-3">Clients by Source — all stages, with how many are Active now.</p><div className="flex flex-col gap-2">{Object.entries(by).sort((a, b) => b[1].n - a[1].n).map(([s, v]) => <div key={s} className="grid grid-cols-[200px_1fr_80px] gap-3 items-center text-[14px]"><span>{s}</span><div className="bg-panel rounded h-[18px]"><div className="bg-lime h-full rounded" style={{ width: `${v.n / max * 100}%` }} /></div><b className="text-right tabular-nums">{v.n} <span className="meta font-normal">({v.active} active)</span></b></div>)}{!Object.keys(by).length && <Empty>No clients yet.</Empty>}</div></div>;
   } else if (tab === "pipeline") {
     const ks = await listClaims(t, { view: "all" });
     const csv = [["Client", "Source", "Date entered", "A2A Sent", "A2A Signed", "Claim", "Authority", "Date Submitted", "Refund Received", "Closed", "Became Non-Active", "Fee %", "Fee (AUD)"], ...ks.map(k => [R.displayName(k.client), k.client.source ?? "", k.client.dateEntered, k.client.a2aSent ?? "", k.client.a2aSigned ?? "", k.claimId, k.authority.name, k.dateSubmitted ?? "", k.refundReceived ?? "", k.closedOn ?? "", k.client.becameNonActive ?? "", k.feePct ?? "", R.feeAUD(k) ?? ""])];
@@ -37,5 +38,5 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         {rows.map(a => <tr key={String(a.id)}><td className="whitespace-nowrap">{a.timestamp.toLocaleString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td><td>{a.userCode}</td><td>{a.action.toLowerCase()}</td><td>{a.entityType}</td><td>{a.recordRef}</td><td>{a.field}</td><td className="max-w-[220px] truncate" title={a.oldValue ?? ""}>{a.oldValue}</td><td className="max-w-[260px] truncate" title={a.newValue ?? ""}>{a.newValue}</td></tr>)}
         {!rows.length && <tr><td colSpan={8}><Empty>No entries.</Empty></td></tr>}</tbody></table></div></div>;
   }
-  return <><h1 className="mb-4">Reports</h1><div className="views mb-3.5"><Link href="/clients">Client reports ›</Link><Link href="/claims">Claim reports ›</Link>{tabs.map(([k, l]) => <Link key={k} href={`/reports?tab=${k}`} className={tab === k ? "on" : ""}>{l}</Link>)}</div>{body}</>;
+  return <><PageHead title="Reports" lede="Where leads come from, how the pipeline moves, and the audit trail behind every change." /><div className="views mb-3.5"><Link href="/clients">Client reports ›</Link><Link href="/claims">Claim reports ›</Link>{tabs.map(([k, l]) => <Link key={k} href={`/reports?tab=${k}`} className={tab === k ? "on" : ""}>{l}</Link>)}</div>{body}</>;
 }

@@ -6,7 +6,7 @@ import { signUpAction } from "@/actions";
 export default function SignupPage() {
   const [state, action, pending] = useActionState(signUpAction, null);
   return (
-    <form action={action} className="card flex flex-col gap-3.5">
+    <form action={action} className="card-plain flex flex-col gap-3.5 !bg-bg">
       <h1 className="text-[22px]">Create your organisation</h1>
       <p className="meta">30-day trial, no card needed. You become the first Admin; add staff under Settings.</p>
       {state && !state.ok && <div className="warn-box">{state.error}</div>}

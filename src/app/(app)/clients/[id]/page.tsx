@@ -31,10 +31,10 @@ export default async function ClientPage({ params, searchParams }: { params: Pro
   return (
     <>
       {c.checklist && <div className="warn-box mb-3.5">Migration check-list: {c.checklist}</div>}
-      <Section className="!pb-0">
+      <Section className="!pb-0 !bg-panel">
         <div className="flex flex-wrap justify-between gap-x-6 gap-y-4 items-start">
-          <div><h1>{R.displayName(c)} <span className="meta font-display font-medium">{c.clientCode}</span></h1><div className="flex flex-wrap gap-2 items-center mt-2"><StageChip stage={c.stage} /><SCChips list={c.specialConditions} empty="" />{c.stage === "INACTIVE" && c.inactiveReason && <span className="chip">{c.inactiveReason}</span>}{c.stage === "LEAD" && <Link href={`/clients/${c.id}?tab=lead`} className="link text-[13px]">Lead screen</Link>}</div></div>
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-[12px] font-bold text-muted items-end">
+          <div><h1>{R.displayName(c)} <span className="meta font-head font-medium">{c.clientCode}</span></h1><div className="flex flex-wrap gap-2 items-center mt-2"><StageChip stage={c.stage} /><SCChips list={c.specialConditions} empty="" />{c.stage === "INACTIVE" && c.inactiveReason && <span className="chip">{c.inactiveReason}</span>}{c.stage === "LEAD" && <Link href={`/clients/${c.id}?tab=lead`} className="link text-[13px]">Lead screen</Link>}</div></div>
+          <div className="flex flex-wrap gap-x-7 gap-y-3 text-[12.5px] font-semibold text-ink3 items-end">
             <div className="flex flex-col gap-0.5">Owner<span className="text-[14px] text-ink">{t.isAdmin ? <SelectField kind="client" id={c.id} field="ownerCode" value={c.ownerCode} options={users.map(u => u.userCode)} className="!h-7 !text-[13px] !w-auto" /> : c.ownerCode}</span></div>
             <div className="flex flex-col gap-0.5">Last contact<Link href={`/clients/${c.id}?tab=summary#notes`} className="text-[14px] text-ink font-semibold">{c.lastContact ? `${R.fmtDate(c.lastContact, false)} · ${R.daysBetween(c.lastContact, t.today)} days` : "—"}</Link></div>
             <div className="flex flex-col gap-0.5">Next follow-up<Link href={`/clients/${c.id}?tab=summary#followups`} className={`text-[14px] font-semibold ${nf?.overdue ? "red" : "text-ink"}`}>{nf ? `${R.fmtDate(nf.date, false)}${nf.overdue ? " · overdue" : ""}` : "—"}</Link></div>

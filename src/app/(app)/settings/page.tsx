@@ -9,6 +9,7 @@ import * as R from "@/lib/rules";
 import { Empty } from "@/components/ui";
 import { AuthorityRow, CompanyForm, AddUserForm, OrgForm, PlanButtons } from "./SettingsClient";
 import { BinButton } from "@/components/actionsClient";
+import { PageHead } from "@/components/PageHead";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string; billing?: string }> }) {
   const t = await requireAdmin(); const { tab = "authorities", billing } = await searchParams;
@@ -36,7 +37,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <div className="card"><h2>Organisation</h2><OrgForm org={t.org} /></div>
       <div className="card mt-5"><h2>Plan</h2>
         <p className="meta mb-3">Current plan: <b>{sub?.plan ?? "trial"}</b> · {sub?.status.toLowerCase()}{sub?.trialEndsAt && sub.status === "TRIALING" ? ` · trial ends ${R.fmtDate(sub.trialEndsAt.toISOString().slice(0, 10))}` : ""} · {sub?.seats ?? 1} seat{(sub?.seats ?? 1) === 1 ? "" : "s"}{sub?.currentPeriodEnd ? ` · renews ${R.fmtDate(sub.currentPeriodEnd.toISOString().slice(0, 10))}` : ""}</p>
-        <div className="flex flex-wrap gap-4">{PLANS.map(p => <div key={p.key} className={`border rounded-[10px] p-4 flex-1 basis-[200px] ${sub?.plan === p.key ? "border-lime shadow-[0_0_0_3px_#EEF5D6]" : "border-line"}`}><div className="font-display font-semibold">{p.name}{sub?.plan === p.key && <span className="chip chip-lime ml-2">current</span>}</div><div className="font-display text-[26px] font-bold">{p.priceId ? "See checkout" : "$— / mo"}</div><div className="meta">{p.seats} seat{p.seats > 1 ? "s" : ""} · {p.blurb}</div></div>)}</div>
+        <div className="flex flex-wrap gap-4">{PLANS.map(p => <div key={p.key} className={`border rounded-[10px] p-4 flex-1 basis-[200px] ${sub?.plan === p.key ? "border-lime shadow-[0_0_0_3px_#EEF5D6]" : "border-line"}`}><div className="font-head font-semibold">{p.name}{sub?.plan === p.key && <span className="chip chip-lime ml-2">current</span>}</div><div className="font-head text-[26px] font-bold">{p.priceId ? "See checkout" : "$— / mo"}</div><div className="meta">{p.seats} seat{p.seats > 1 ? "s" : ""} · {p.blurb}</div></div>)}</div>
         <div className="mt-4"><PlanButtons enabled={stripeEnabled()} plans={PLANS.map(p => ({ key: p.key, name: p.name, available: !!p.priceId }))} hasBilling={!!sub?.stripeCustomerId} /></div>
       </div>
     </>;
@@ -49,5 +50,5 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         {ks.filter(k => !k.client.deletedAt).map(k => <tr key={k.id}><td>{k.claimId}</td><td>Claim · {R.displayName(k.client)}</td><td>{R.fmtDate(k.deletedAt!.toISOString().slice(0, 10))}</td><td><BinButton kind="claim" id={k.id} restore /></td></tr>)}
         {!cs.length && !ks.length && <tr><td colSpan={4}><Empty>The bin is empty.</Empty></td></tr>}</tbody></table></div></div>;
   }
-  return <><h1 className="mb-4">Settings</h1><div className="views mb-3.5">{tabs.map(([k, l]) => <Link key={k} href={`/settings?tab=${k}`} className={tab === k ? "on" : ""}>{l}</Link>)}</div>{body}</>;
+  return <><PageHead title="Settings" lede="Reference data, people and plan for this organisation. Admin only." /><div className="views mb-3.5">{tabs.map(([k, l]) => <Link key={k} href={`/settings?tab=${k}`} className={tab === k ? "on" : ""}>{l}</Link>)}</div>{body}</>;
 }

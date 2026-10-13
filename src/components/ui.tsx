@@ -4,7 +4,7 @@ import type { FollowUpRow } from "@/lib/services/queries";
 import { DoneButton, ChasedButton } from "./actionsClient";
 
 type NameLike = { id: string; clientType: string; surname?: string | null; firstName?: string | null; businessNames?: string[] | null; clientCode?: string | null; stage?: string; specialConditions?: string[]; checklist?: string | null };
-export const StageChip = ({ stage }: { stage: string }) => <span className={`chip ${stage === "ACTIVE" ? "chip-lime" : ""}`}>{stage === "LEAD" ? "Lead" : stage === "ACTIVE" ? "Active" : "Inactive"}</span>;
+export const StageChip = ({ stage }: { stage: string }) => <span className={`chip ${stage === "ACTIVE" ? "chip-lime" : stage === "LEAD" ? "chip-blue" : ""}`}>{stage === "LEAD" ? "Lead" : stage === "ACTIVE" ? "Active" : "Inactive"}</span>;
 export const SCChips = ({ list, empty = "—" }: { list: string[]; empty?: string }) => list.length ? <span className="inline-flex flex-wrap gap-1.5">{list.map(s => <span key={s} className="chip chip-lime">{s}</span>)}</span> : <span className="meta">{empty}</span>;
 export const ClientLink = ({ c, tab }: { c: NameLike; tab?: string }) => <Link href={`/clients/${c.id}${tab ? `?tab=${tab}` : ""}`} className="link">{R.displayName(c)}</Link>;
 export const ClaimLink = ({ clientId, id, claimId }: { clientId: string; id: string; claimId: string }) => <Link href={`/clients/${clientId}?tab=claims&claim=${id}`} className="link">{claimId}</Link>;
@@ -28,5 +28,5 @@ export function FollowUpItem({ f, showClient, today }: { f: FollowUpRow; showCli
 }
 export const Empty = ({ children }: { children: React.ReactNode }) => <div className="meta text-center p-4">{children}</div>;
 export const Section = ({ title, children, right, className, id }: { title?: string; children: React.ReactNode; right?: React.ReactNode; className?: string; id?: string }) => (
-  <section id={id} className={`card ${className ?? ""}`}>{(title || right) && <div className="flex justify-between items-center gap-3 mb-3.5"><h2 className="!mb-0">{title}</h2>{right}</div>}{children}</section>
+  <section id={id} className={`card-plain ${className ?? ""}`}>{(title || right) && <div className="flex justify-between items-center gap-3 mb-3.5"><h2 className="!mb-0">{title}</h2>{right}</div>}{children}</section>
 );

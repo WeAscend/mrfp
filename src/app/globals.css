@@ -1,71 +1,108 @@
 @import "tailwindcss";
 
-/* Brand (Spec 9.2): Navy #0C3C60, Lime #BADA55, White. Poppins stands in for Brandon Grotesque, Nunito Sans for Avenir. */
+/* Design system: ported from the Nexon Guardian simulator (sidebar + top bar, hairlines, pills, big tight headings,
+   dot-grid ground, light/dark) with MRF's navy ink and lime accent (Spec 9.2). Fonts: Outfit (geometric, for Nexa),
+   Hanken Grotesk (the open release of HK Grotesk). */
 @theme {
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-ink3: var(--ink3);
+  --color-line: var(--line);
+  --color-panel: var(--panel);
   --color-navy: #0C3C60;
-  --color-navy-deep: #082a44;
   --color-lime: #BADA55;
-  --color-lime-soft: #EEF5D6;
-  --color-ground: #F3F6F9;
-  --color-ink: #0C3C60;
-  --color-muted: #5B6B7A;
-  --color-line: #DDE5EC;
-  --color-line-strong: #C9D4DE;
-  --color-chip: #E8EEF3;
-  --color-alert: #D92D20;
-  --color-alert-soft: #FEF0EE;
-  --color-warn: #B54708;
-  --color-warn-soft: #FFF4E5;
-  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Nunito Sans", "Avenir", ui-sans-serif, system-ui, sans-serif;
-  --shadow-card: 0 1px 2px rgba(12, 60, 96, 0.08);
+  --color-lime-soft: var(--limeSoft);
+  --color-red: #e34749;
+  --color-amber: #ffbf00;
+  --color-green: #00c982;
+  --color-blue: #2e8af5;
+  --color-red-soft: var(--redSoft);
+  --color-amber-soft: var(--amberSoft);
+  --color-green-soft: var(--greenSoft);
+  --color-blue-soft: var(--blueSoft);
+  --font-head: "Outfit", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Hanken Grotesk", "HK Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  --bg: #ffffff; --ink: #0C3C60; --ink2: rgba(12, 60, 96, .68); --ink3: rgba(12, 60, 96, .46);
+  --line: rgba(12, 60, 96, .14); --panel: #f4f6f8; --grid: rgba(12, 60, 96, .045); --dot: rgba(12, 60, 96, .16);
+  --limeSoft: rgba(186, 218, 85, .22); --redSoft: rgba(227, 71, 73, .12); --greenSoft: rgba(0, 201, 130, .14); --blueSoft: rgba(46, 138, 245, .14); --amberSoft: rgba(255, 191, 0, .18);
+  --navW: 236px; --topH: 60px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000; --ink: #ffffff; --ink2: rgba(247, 242, 242, .7); --ink3: rgba(247, 242, 242, .45);
+    --line: rgba(255, 255, 255, .15); --panel: rgba(255, 255, 255, .05); --grid: rgba(255, 255, 255, .07); --dot: rgba(255, 255, 255, .28);
+    --limeSoft: rgba(186, 218, 85, .18); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000; --ink: #ffffff; --ink2: rgba(247, 242, 242, .7); --ink3: rgba(247, 242, 242, .45);
+  --line: rgba(255, 255, 255, .15); --panel: rgba(255, 255, 255, .05); --grid: rgba(255, 255, 255, .07); --dot: rgba(255, 255, 255, .28);
+  --limeSoft: rgba(186, 218, 85, .18); color-scheme: dark;
 }
 
 @layer base {
-  html { font-family: var(--font-body); color: var(--color-ink); background: var(--color-ground); font-size: 15px; }
-  h1, h2, h3, .display { font-family: var(--font-display); }
-  h1 { font-size: 26px; font-weight: 700; }
-  h2 { font-size: 17px; font-weight: 600; }
+  html { height: 100%; background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--font-body); -webkit-font-smoothing: antialiased; }
+  body { height: 100%; }
+  h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; letter-spacing: -.01em; margin: 0; }
+  h1 { font-size: clamp(26px, 2.6vw, 34px); line-height: 1.08; letter-spacing: -.02em; }
+  h2 { font-size: 19px; }
+  h3 { font-size: 16px; }
   a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--color-blue); outline-offset: 2px; border-radius: 6px; }
+  ::placeholder { color: var(--ink3); }
 }
 
 @layer components {
-  .card { @apply bg-white rounded-[10px] px-6 py-5 shadow-card min-w-0; }
-  .card h2 { @apply mb-3.5; }
-  .btn { @apply inline-flex items-center justify-center h-[38px] px-4 rounded-md border border-navy bg-white text-ink font-display font-semibold text-[13px] cursor-pointer whitespace-nowrap no-underline disabled:opacity-50 disabled:cursor-not-allowed hover:bg-ground; }
-  .btn-primary { @apply bg-lime border-lime text-navy hover:bg-[#b0d04a]; }
-  .btn-sm { @apply h-8 px-3 text-[12px]; }
-  .btn-danger { @apply border-alert text-alert hover:bg-alert-soft; }
-  .input { @apply block w-full min-w-0 h-[38px] rounded-md border border-line-strong bg-white px-2.5 text-[15px] text-ink focus:outline-2 focus:outline-lime; }
+  .grid-bg { background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.6px), linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 56px 56px, 56px 56px, 56px 56px; background-position: 28px 28px, 0 0, 0 0; }
+  .lede { @apply text-[16.5px] text-ink2 max-w-[62ch] mt-2; }
+  .card { @apply border border-line rounded-[14px] px-5 py-[18px] bg-panel min-w-0; }
+  .card h2 { @apply mb-3; }
+  .card-plain { @apply border border-line rounded-[14px] px-5 py-[18px] min-w-0; background: var(--bg); }
+  .btn { @apply inline-flex items-center justify-center h-[38px] px-[18px] rounded-full border border-line text-ink font-semibold text-[14px] cursor-pointer whitespace-nowrap no-underline hover:border-ink disabled:opacity-40 disabled:cursor-not-allowed; background: transparent; }
+  .btn-primary { @apply bg-lime border-lime text-navy hover:border-lime hover:brightness-105; }
+  .btn-sm { @apply h-[30px] px-3.5 text-[13px]; }
+  .btn-danger { @apply text-red hover:border-red; }
+  .input { @apply block w-full min-w-0 h-[38px] rounded-[10px] border border-line px-3 text-[15px] text-ink focus:border-ink3; background: var(--bg); }
   textarea.input { @apply h-auto py-2 leading-snug resize-y; }
-  .label { @apply flex flex-col gap-1 text-[13px] font-bold text-muted min-w-0; }
+  select.input { @apply pr-8; }
+  .label { @apply flex flex-col gap-1 text-[12.5px] font-semibold text-ink3 min-w-0; }
   .value { @apply text-[15px] font-normal text-ink whitespace-pre-line break-words; }
-  .chip { @apply inline-block rounded-full bg-chip text-ink px-2.5 py-[3px] text-[13px] font-bold leading-tight; }
-  .chip-lime { @apply bg-lime text-navy; }
-  .chip-outline { @apply bg-transparent border border-ink; }
-  .chip-red { @apply bg-alert-soft text-alert; }
-  .chip-amber { @apply bg-warn-soft text-warn; }
-  .meta { @apply text-[13px] text-muted; }
-  .meta b { @apply text-ink; }
+  .chip { @apply inline-block rounded-full border border-line px-2.5 py-[3px] text-[13px] font-medium leading-tight text-ink; background: transparent; }
+  .chip-lime { @apply bg-lime border-lime text-navy font-semibold; }
+  .chip-outline { @apply border-ink3; }
+  .chip-red { @apply bg-red-soft border-transparent text-red font-semibold; }
+  .chip-amber { @apply bg-amber-soft border-transparent text-ink font-semibold; }
+  .chip-blue { @apply bg-blue-soft border-blue; }
+  .meta { @apply text-[13px] text-ink3; }
+  .meta b { @apply text-ink font-semibold; }
   .tbl { @apply w-full border-collapse text-[14px] tabular-nums; }
-  .tbl th { @apply text-left text-[12px] tracking-wide uppercase text-muted px-2.5 py-2 border-b-2 border-line whitespace-nowrap; }
-  .tbl td { @apply px-2.5 py-2 border-b border-line align-top; }
+  .tbl th { @apply text-left text-[12.5px] font-semibold text-ink2 px-2.5 py-2 border-b border-line whitespace-nowrap; }
+  .tbl td { @apply px-2.5 py-[9px] border-t border-line align-top; }
+  .tbl tbody tr:hover td { background: var(--panel); }
   .tbl .num { @apply text-right; }
-  .tbl tr.over td { @apply bg-alert-soft; }
-  .tbl tr.over td:first-child { box-shadow: inset 4px 0 0 var(--color-alert); }
-  .link { @apply font-semibold underline underline-offset-2 hover:text-navy-deep; }
-  .views { @apply flex flex-wrap gap-1.5; }
-  .views a, .views button { @apply no-underline text-[13px] font-semibold px-3 py-1.5 rounded-full border border-line-strong bg-white cursor-pointer; }
-  .views .on { @apply bg-navy text-white border-navy; }
-  .fu { @apply flex gap-3 items-center border border-line rounded-lg px-3.5 py-2.5; }
-  .fu.over { @apply bg-alert-soft border-[#F5C2BD]; }
-  .warn-box { @apply bg-warn-soft border border-[#F4D9A6] rounded-lg px-3 py-2 text-[13px] text-warn; }
-  .red { color: var(--color-alert) !important; }
-  .tabs { @apply flex gap-1 border-b border-line mt-3.5 overflow-x-auto; }
-  .tabs a { @apply no-underline px-4 py-2.5 font-display font-medium text-[14px] text-muted border-b-[3px] border-transparent whitespace-nowrap; }
+  .tbl tr.over td { background: var(--redSoft); }
+  .tbl tr.over td:first-child { box-shadow: inset 3px 0 0 var(--color-red); }
+  .link { @apply font-semibold underline underline-offset-[3px] decoration-[rgba(12,60,96,.3)] hover:decoration-current; }
+  .views { @apply flex flex-wrap gap-2; }
+  .views a, .views button { @apply no-underline text-[13.5px] font-medium px-3 py-1.5 rounded-full border border-line text-ink2 cursor-pointer hover:border-ink hover:text-ink; background: transparent; }
+  .views .on { @apply text-ink border-ink; background: var(--panel); }
+  .fu { @apply flex gap-3 items-center border border-line rounded-xl px-3.5 py-2.5; background: var(--bg); }
+  .fu.over { @apply bg-red-soft border-transparent; box-shadow: inset 3px 0 0 var(--color-red); }
+  .warn-box { @apply bg-amber-soft rounded-xl px-3.5 py-2.5 text-[13.5px] text-ink; }
+  .red { color: var(--color-red) !important; }
+  .tabs { @apply flex gap-1 border-b border-line mt-4 overflow-x-auto; }
+  .tabs a { @apply no-underline px-3.5 py-2.5 text-[14.5px] text-ink3 border-b-2 border-transparent whitespace-nowrap -mb-px; }
   .tabs a.on { @apply text-ink border-lime font-semibold; }
+  .stat .n { @apply font-head font-bold text-[30px] leading-none tracking-[-.02em]; }
+  .stat .l { @apply mt-1.5 text-[13.5px] text-ink2; }
   .grid2 { @apply grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3.5; }
   .grid3 { @apply grid grid-cols-1 sm:grid-cols-3 gap-x-5 gap-y-3.5; }
   .span2 { @apply sm:col-span-2; }
   .span3 { @apply sm:col-span-3; }
+  .eyebrow { @apply text-[12px] font-semibold tracking-[.08em] uppercase text-ink3; }
 }

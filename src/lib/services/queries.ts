@@ -1,5 +1,5 @@
 // Read-side queries: follow-up lists, search, report views. All scoped by orgId.
-import { and, eq, isNull, or, ilike, sql, desc, asc } from "drizzle-orm";
+import { and, eq, isNull, or, ilike, sql, desc, asc, inArray } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type { Tenant } from "../tenant";
 import * as R from "../rules";
@@ -55,7 +55,9 @@ export async function listClients(t: Tenant, f: { view?: string; stage?: string;
   const open = await db.select({ clientId: K.clientId, n: sql<number>`count(*)::int` }).from(K).where(and(eq(K.orgId, t.org.id), isNull(K.deletedAt), sql`${K.progress} IS NOT NULL AND ${K.progress} NOT IN (16,17,18,19,20,21)`)).groupBy(K.clientId);
   const openBy = Object.fromEntries(open.map(o => [o.clientId, o.n]));
   const fus = await allFollowUps(t); const nextBy = new Map<string, R.FollowUp>(); for (const x of fus) if (!nextBy.has(x.clientId)) nextBy.set(x.clientId, x);
-  return rows.map(c => ({ ...c, openClaims: openBy[c.id] ?? 0, next: nextBy.get(c.id) ?? null })).sort((a, b) => R.displayName(a).localeCompare(R.displayName(b)));
+  const logs = rows.length ? await db.select({ clientId: schema.searchLog.clientId, authorities: schema.searchLog.authorities, date: schema.searchLog.date }).from(schema.searchLog).where(inArray(schema.searchLog.clientId, rows.map(r => r.id))).orderBy(desc(schema.searchLog.date)) : [];
+  const foundBy = new Map<string, string[]>(); for (const l of logs) if (!foundBy.has(l.clientId)) foundBy.set(l.clientId, l.authorities);
+  return rows.map(c => ({ ...c, openClaims: openBy[c.id] ?? 0, next: nextBy.get(c.id) ?? null, foundAt: foundBy.get(c.id) ?? [] })).sort((a, b) => R.displayName(a).localeCompare(R.displayName(b)));
 }
 export const CLAIM_VIEWS: { key: string; label: string; test: (p: number | null) => boolean }[] = [
   { key: "all", label: "All claims", test: () => true }, { key: "notstarted", label: "Not Started", test: p => p === 1 },

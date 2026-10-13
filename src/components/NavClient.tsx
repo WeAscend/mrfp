@@ -4,14 +4,23 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { logOutAction } from "@/actions";
 
-export function NavLinks({ items, due }: { items: string[][]; due: number }) {
+type Group = { label: string; items: { href: string; label: string; badge?: number }[] };
+export function SideNav({ groups }: { groups: Group[] }) {
   const path = usePathname();
+  const on = (href: string) => path === href || path.startsWith(href + "/");
   return (
-    <nav aria-label="Main" className="flex flex-wrap gap-1.5 flex-1 basis-[380px]">
-      {items.map(([href, label]) => {
-        const on = path === href || path.startsWith(href + "/") || (href === "/clients" && path.startsWith("/clients"));
-        return <Link key={href} href={href} className={`no-underline px-3.5 py-2 rounded-md font-display text-[14px] ${on ? "bg-lime text-navy font-semibold" : "text-white font-medium hover:bg-white/10"}`}>{label}{href === "/followups" && due > 0 && <span className="ml-1 bg-alert text-white rounded-full px-1.5 py-px text-[12px]" aria-label={`${due} due`}>{due}</span>}</Link>;
-      })}
+    <nav aria-label="Main" className="border-b md:border-b-0 md:border-r border-line px-3 py-2 md:py-[18px] md:pb-6 md:overflow-y-auto bg-bg flex md:block gap-1 overflow-x-auto">
+      {groups.map(g => (
+        <div key={g.label} className="flex md:block gap-1 items-center">
+          <div className="hidden md:block text-[12.5px] text-ink3 px-3 pt-4 pb-1.5 first:pt-0">{g.label}</div>
+          {g.items.map(i => (
+            <Link key={i.href} href={i.href} aria-current={on(i.href) ? "page" : undefined} className={`flex items-center justify-between md:w-full rounded-lg px-3 py-2 text-[15px] no-underline whitespace-nowrap ${on(i.href) ? "text-ink bg-panel shadow-[inset_3px_0_0_var(--color-lime)]" : "text-ink2 hover:text-ink hover:bg-panel"}`}>
+              <span>{i.label}</span>
+              {i.badge ? <span className="ml-2 bg-red text-white rounded-full px-1.5 py-px text-[12px] font-semibold leading-tight" aria-label={`${i.badge} due`}>{i.badge}</span> : null}
+            </Link>
+          ))}
+        </div>
+      ))}
     </nav>
   );
 }
@@ -19,8 +28,8 @@ export function UserMenu({ code, name, role, org }: { code: string; name: string
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
-      <button className="bg-white text-navy rounded-full w-[38px] h-[38px] flex items-center justify-center font-display font-semibold text-[13px]" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label="Account menu">{code}</button>
-      {open && <div className="absolute right-0 top-11 bg-white rounded-lg shadow-lg border border-line p-3 min-w-[220px] z-30 text-[14px]">
+      <button className="rounded-full border border-line px-3.5 h-[34px] text-[14px] font-semibold text-ink hover:border-ink" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label="Account menu">{code}</button>
+      {open && <div className="absolute right-0 top-11 bg-bg rounded-xl shadow-xl border border-line p-3.5 min-w-[230px] z-30 text-[14px]">
         <div className="font-semibold">{name} <span className="meta">· {code}</span></div><div className="meta">{role === "ADMIN" ? "Admin" : "User"} · {org}</div>
         <form action={logOutAction} className="mt-3"><button className="btn btn-sm w-full">Log out</button></form>
       </div>}

@@ -6,7 +6,7 @@ import { logInAction } from "@/actions";
 export default function LoginPage() {
   const [state, action, pending] = useActionState(logInAction, null);
   return (
-    <form action={action} className="card flex flex-col gap-3.5">
+    <form action={action} className="card-plain flex flex-col gap-3.5 !bg-bg">
       <h1 className="text-[22px]">Log in</h1>
       {state && !state.ok && <div className="warn-box">{state.error}</div>}
       <label className="label">Email<input name="email" type="email" className="input" required autoComplete="email" /></label>

@@ -5,6 +5,7 @@ import { members } from "@/lib/services/org";
 import * as R from "@/lib/rules";
 import { ClientLink, SCChips, StageChip, ChecklistChip, Overdue, Empty } from "@/components/ui";
 import { FilterBar, ExportCsvButton } from "@/components/listClient";
+import { PageHead } from "@/components/PageHead";
 
 type SP = { view?: string; stage?: string; ident?: string; source?: string; sc?: string; owner?: string; enteredFrom?: string; enteredTo?: string };
 export default async function ClientsPage({ searchParams }: { searchParams: Promise<SP> }) {
@@ -20,8 +21,9 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   ];
   return (
     <>
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-4"><h1>Clients</h1><div className="flex flex-wrap gap-x-6 gap-y-2 text-[12px] font-bold text-muted">{[["Clients", all.length], ["Leads", n("LEAD")], ["Active", n("ACTIVE")], ["Inactive", n("INACTIVE")]].map(([l, v]) => <div key={l} className="flex flex-col"><span>{l}</span><span className="text-[14px] text-ink">{v}</span></div>)}</div></div>
-      <div className="card">
+      <PageHead title="Clients" lede="Every record from first lead to finished client. Filter by any field; export what you see." />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">{[["Clients", all.length], ["Leads", n("LEAD")], ["Active", n("ACTIVE")], ["Inactive", n("INACTIVE")]].map(([l, v]) => <div key={l} className="stat card-plain !py-4"><div className="n">{v}</div><div className="l">{l}</div></div>)}</div>
+      <div className="card-plain">
         <div className="flex flex-wrap items-end gap-2.5 mb-3.5">
           <div className="views"><Link href="/clients" className={sp.view !== "active" ? "on" : ""}>All clients</Link><Link href="/clients?view=active" className={sp.view === "active" ? "on" : ""}>Active clients</Link></div>
           <FilterBar base="/clients" current={sp as Record<string, string>} filters={filters} dateRange={{ fromKey: "enteredFrom", toKey: "enteredTo", label: "Date entered" }} />

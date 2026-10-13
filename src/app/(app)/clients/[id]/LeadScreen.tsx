@@ -12,11 +12,11 @@ export function LeadScreen({ t, c, fus, byId }: Ctx) {
   const search = c.searchLog[0];
   return (
     <>
-      <div className="meta mb-2.5"><Link href="/leads" className="text-muted">Leads</Link> › {c.leadIdentifier || "No identifier"}</div>
+      <div className="meta mb-2.5"><Link href="/leads" className="text-ink3">Leads</Link> › {c.leadIdentifier || "No identifier"}</div>
       {c.checklist && <div className="warn-box mb-3.5">Migration check-list: {c.checklist}</div>}
-      <Section>
+      <Section className="!bg-panel">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-          <div className="flex-1 basis-[360px]"><h1 className="text-[28px]">{R.displayName(c)}</h1><div className="flex flex-wrap gap-2 items-center mt-2"><span className="chip">Lead</span><SCChips list={c.specialConditions} empty="" /><span className="meta">{c.clientType === "BUSINESS" ? "Business" : "Individual"} · Owner <b>{c.ownerCode}</b> · Last updated by <b>{c.lastUpdatedBy ?? "—"}</b>, {R.fmtDate(c.lastUpdatedAt.toISOString().slice(0, 10))}</span></div></div>
+          <div className="flex-1 basis-[360px]"><h1>{R.displayName(c)}</h1><div className="flex flex-wrap gap-2 items-center mt-2"><span className="chip">Lead</span><SCChips list={c.specialConditions} empty="" /><span className="meta">{c.clientType === "BUSINESS" ? "Business" : "Individual"} · Owner <b>{c.ownerCode}</b> · Last updated by <b>{c.lastUpdatedBy ?? "—"}</b>, {R.fmtDate(c.lastUpdatedAt.toISOString().slice(0, 10))}</span></div></div>
           <label className="label uppercase tracking-wider text-[12px]">Lead Identifier<LeadIdentifierSelect clientId={c.id} value={c.leadIdentifier} /></label>
           <div className="flex gap-2.5 flex-wrap"><Link href={`/clients/${c.id}?tab=profile`} className="btn">Show full record</Link><a href="#noteBox" className="btn btn-primary">Log a call note</a><SetInactiveButton clientId={c.id} openClaims={0} name={R.displayName(c)} /></div>
         </div>
@@ -31,7 +31,7 @@ export function LeadScreen({ t, c, fus, byId }: Ctx) {
             <ChipMulti kind="client" id={c.id} field="specialConditions" label="Special Condition" value={c.specialConditions} options={R.SPECIAL_CONDITIONS} />
           </div></Section>
           <Section title="What we found">
-            <div className="flex items-baseline gap-3 flex-wrap"><span className="font-display text-[30px] font-bold">{R.money(c.leadAmount)}</span><span className="meta">Lead Amount (estimate)</span></div>
+            <div className="flex items-baseline gap-3 flex-wrap"><span className="font-head text-[30px] font-bold">{R.money(c.leadAmount)}</span><span className="meta">Lead Amount (estimate)</span></div>
             <div className="grid2 mt-3"><MoneyField kind="client" id={c.id} field="leadAmount" label="Lead Amount" value={c.leadAmount} /><Static label="Found at">{search ? <span className="inline-flex flex-wrap gap-1.5">{search.authorities.map(a => <span key={a} className="chip chip-outline">{a}</span>)}<span className="meta self-center">{R.fmtDate(search.date, false)}</span></span> : <span className="meta">No search logged — add one on the full record</span>}</Static>
             <TextField kind="client" id={c.id} field="addressOnUCM" label="Address on UCM" value={c.addressOnUCM} className="span2" hint="Exactly as written on the register" /></div>
           </Section>

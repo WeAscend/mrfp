@@ -28,7 +28,7 @@ export function NoteBox({ clientId, claimId, placeholder, today }: { clientId: s
 }
 export function NoteDate({ noteId, value }: { noteId: string; value: string }) {
   const { act } = useAct();
-  return <input type="date" defaultValue={value} className="bg-transparent border-0 text-[13px] text-muted w-[120px]" title="Edit note date" onChange={e => e.target.value && act(() => A.updateNoteDateAction(noteId, e.target.value))} />;
+  return <input type="date" defaultValue={value} className="bg-transparent border-0 text-[13px] text-ink3 w-[120px]" title="Edit note date" onChange={e => e.target.value && act(() => A.updateNoteDateAction(noteId, e.target.value))} />;
 }
 export function LeadIdentifierSelect({ clientId, value }: { clientId: string; value: string | null }) {
   const { act, pending } = useAct();
@@ -94,7 +94,7 @@ export function FileUpload({ clientId, claimId, label = "Add file", accept, comp
     <>
       <input ref={ref} type="file" hidden multiple={!claimId} accept={accept} onChange={e => { send(e.target.files); e.target.value = ""; }} />
       {compact ? <button className="btn btn-sm" disabled={pending} onClick={() => ref.current?.click()}>{pending ? "Uploading…" : label}</button>
-        : <div role="button" tabIndex={0} onClick={() => ref.current?.click()} onKeyDown={e => e.key === "Enter" && ref.current?.click()} onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)} onDrop={e => { e.preventDefault(); setDrag(false); send(e.dataTransfer.files); }} className={`border-2 border-dashed rounded-lg p-4 text-center meta cursor-pointer ${drag ? "border-lime bg-lime-soft" : "border-line-strong"}`}>{pending ? "Uploading…" : label}</div>}
+        : <div role="button" tabIndex={0} onClick={() => ref.current?.click()} onKeyDown={e => e.key === "Enter" && ref.current?.click()} onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)} onDrop={e => { e.preventDefault(); setDrag(false); send(e.dataTransfer.files); }} className={`border border-dashed rounded-xl p-4 text-center meta cursor-pointer ${drag ? "border-lime bg-lime-soft" : "border-line hover:border-ink3"}`}>{pending ? "Uploading…" : label}</div>}
     </>
   );
 }
@@ -140,6 +140,6 @@ export function BinButton({ kind, id, restore }: { kind: "client" | "claim"; id:
 }
 export function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return <div className="fixed inset-0 bg-[rgba(6,30,51,.55)] flex items-center justify-center p-4 z-40" onClick={onClose} role="dialog" aria-modal="true" aria-label={title}>
-    <div className="bg-white rounded-xl p-6 w-full max-w-[560px] shadow-2xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}><h2>{title}</h2>{children}</div>
+    <div className="bg-bg border border-line rounded-2xl p-6 w-full max-w-[560px] shadow-2xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}><h2>{title}</h2>{children}</div>
   </div>;
 }
