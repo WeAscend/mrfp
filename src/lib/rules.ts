@@ -13,6 +13,15 @@ export const STEPS: [number, string][] = [
 ];
 export const stepName = (n: number | null | undefined, org = "MRF") => n ? (STEPS.find(s => s[0] === n)?.[1] ?? "").replace("{ORG}", org) : "";
 export const CLOSING_STEPS = [16, 17, 18, 19, 20, 21];
+/** The six stages the Cases board groups the 21 steps into. */
+export const CASE_STAGES: { key: string; label: string; steps: number[]; hint: string }[] = [
+  { key: "start", label: "Not started", steps: [1], hint: "Opened, nothing sent yet" },
+  { key: "a2a", label: "Authority to Act", steps: [2, 3], hint: "Sent · signed" },
+  { key: "docs", label: "Evidence & forms", steps: [4, 5, 6], hint: "ID & address · authority forms" },
+  { key: "ha", label: "With the authority", steps: [7, 8, 9], hint: "Submitted · more info · resent" },
+  { key: "refund", label: "Approved & refund", steps: [10, 11, 12], hint: "Approved · refund received" },
+  { key: "invoice", label: "Invoice & review", steps: [13, 14, 15], hint: "Invoice sent · paid · review" },
+];
 export const PAID_STEPS = [14, 15, 16, 17]; // reached MRF Payment Received
 export const MANUAL_CLOSE_OPTIONS = [21, 19, 18, 20];
 export const MILESTONE_FIELD: Record<number, string> = { 5: "haFormSent", 6: "haFormSigned", 7: "dateSubmitted", 10: "claimApproved", 11: "refundReceived", 12: "refundReceived", 13: "invoiceSent", 14: "paymentReceived", 15: "reviewRequested", 16: "reviewCompleted" };

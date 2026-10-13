@@ -16,15 +16,21 @@ export function LeadScreen({ t, c, fus, byId, tl, openSign, emailState, smsState
   const search = c.searchLog[0]; const hasEmail = !!firstEmail(c.email), hasMobile = !!toE164(c.phoneMobile);
   return (
     <>
-      <div className="meta mb-2.5"><Link href="/leads" className="text-ink3">Leads</Link> › {c.leadIdentifier || "No identifier"}</div>
       {c.checklist && <div className="warn-box mb-3.5">Migration check-list: {c.checklist}</div>}
-      <Section className="!bg-panel">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-          <div className="flex-1 basis-[360px]"><h1>{R.displayName(c)}</h1><div className="flex flex-wrap gap-2 items-center mt-2"><span className="chip">Lead</span><SCChips list={c.specialConditions} empty="" /><ConsentChips clientId={c.id} email={emailState} sms={smsState} /><span className="meta">{c.clientType === "BUSINESS" ? "Business" : "Individual"} · Owner <b>{c.ownerCode}</b> · Last updated by <b>{c.lastUpdatedBy ?? "—"}</b>, {R.fmtDate(c.lastUpdatedAt.toISOString().slice(0, 10))}</span></div></div>
-          <label className="label uppercase tracking-wider text-[12px]">Lead Identifier<LeadIdentifierSelect clientId={c.id} value={c.leadIdentifier} /></label>
-          <div className="flex gap-2.5 flex-wrap"><LogCallButton clientId={c.id} hasEmail={hasEmail} emailState={emailState} primary /><SendMessageButton clientId={c.id} templateKey="info_email" label="Send info email" /><SendA2AButton clientId={c.id} hasEmail={hasEmail} hasMobile={hasMobile} open={openSign} /><Link href={`/clients/${c.id}?tab=profile`} className="btn">Full record</Link><SetInactiveButton clientId={c.id} openClaims={0} name={R.displayName(c)} /></div>
+      <div className="hero">
+        <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+          <div className="flex-1 basis-[360px] min-w-0"><div className="meta mb-1.5"><Link href="/leads" className="no-underline">Leads</Link> › {c.leadIdentifier || "No identifier"}</div><h1>{R.displayName(c)}</h1><div className="flex flex-wrap gap-2 items-center mt-2.5"><span className="chip chip-blue">Lead</span><SCChips list={c.specialConditions} empty="" /><ConsentChips clientId={c.id} email={emailState} sms={smsState} /></div></div>
+          <label className="label text-[12px]">Lead Identifier<LeadIdentifierSelect clientId={c.id} value={c.leadIdentifier} /></label>
         </div>
-      </Section>
+        <div className="stat-row">
+          <div>Lead amount<span>{R.money(c.leadAmount)}</span></div>
+          <div>Last contact<span>{c.lastContact ? `${R.fmtDate(c.lastContact, false)} · ${R.daysBetween(c.lastContact, t.today)}d` : "never"}</span></div>
+          <div>Next follow-up<span className={fus[0]?.overdue ? "red" : ""}>{fus[0] ? `${R.fmtDate(fus[0].date, false)}${fus[0].overdue ? " · overdue" : ""}` : "—"}</span></div>
+          <div>Owner<span>{c.ownerCode}</span></div>
+          <div>Source<span>{c.source || "—"}</span></div>
+        </div>
+        <div className="flex gap-2.5 flex-wrap mt-5"><LogCallButton clientId={c.id} hasEmail={hasEmail} emailState={emailState} primary /><SendMessageButton clientId={c.id} templateKey="info_email" label="Send info email" /><SendA2AButton clientId={c.id} hasEmail={hasEmail} hasMobile={hasMobile} open={openSign} /><Link href={`/clients/${c.id}?tab=profile`} className="btn">Full record</Link><SetInactiveButton clientId={c.id} openClaims={0} name={R.displayName(c)} /></div>
+      </div>
       <div className="flex flex-wrap gap-5 items-start mt-5">
         <div className="flex-1 basis-[420px] flex flex-col gap-5 min-w-0">
           <Section title="Contact"><div className="grid2">

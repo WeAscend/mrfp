@@ -105,4 +105,39 @@
   .span2 { @apply sm:col-span-2; }
   .span3 { @apply sm:col-span-3; }
   .eyebrow { @apply text-[12px] font-semibold tracking-[.08em] uppercase text-ink3; }
+  /* Record hero: the one navy moment on a page. Everything below it is hairline panels. */
+  .hero { @apply rounded-[16px] px-6 py-5 text-white; background: linear-gradient(135deg, #0C3C60 0%, #124B78 60%, #185A8E 100%); }
+  .hero h1 { @apply text-white; }
+  .hero .meta, .hero .meta b { color: rgba(255,255,255,.72); }
+  .hero .meta b { color: #fff; }
+  .hero .chip { border-color: rgba(255,255,255,.35); color: #fff; }
+  .hero .chip-lime { background: var(--color-lime); border-color: var(--color-lime); color: #0C3C60; }
+  .hero .chip-red { background: #e34749; border-color: #e34749; color: #fff; }
+  .hero .chip-amber { background: var(--color-amber); border-color: var(--color-amber); color: #0C3C60; }
+  .hero .chip-blue { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.35); color: #fff; }
+  .hero .btn { border-color: rgba(255,255,255,.4); color: #fff; }
+  .hero .btn:hover { border-color: #fff; }
+  .hero .btn-primary { background: var(--color-lime); border-color: var(--color-lime); color: #0C3C60; }
+  .hero .btn-danger { color: #ffb4b5; }
+  .hero .input, .hero select.input { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.35); color: #fff; }
+  .hero .label { color: rgba(255,255,255,.65); }
+  .hero .link, .hero .tabs a { color: #fff; }
+  .hero .link { text-decoration-color: rgba(255,255,255,.4); }
+  .hero .red { color: #ffb4b5 !important; }
+  .hero .stat-row { @apply flex flex-wrap gap-x-8 gap-y-3 mt-5 pt-4; border-top: 1px solid rgba(255,255,255,.18); }
+  .hero .stat-row > div { @apply flex flex-col gap-0.5 text-[12px]; color: rgba(255,255,255,.62); }
+  .hero .stat-row > div > * { @apply text-[15px] font-semibold text-white no-underline; }
+  .hero .tabs { border-color: rgba(255,255,255,.18); @apply mt-5; }
+  .hero .tabs a { color: rgba(255,255,255,.65); }
+  .hero .tabs a.on { color: #fff; border-color: var(--color-lime); }
+  .board { @apply grid gap-3 items-start grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 min-[1560px]:grid-cols-6; }
+  .col { @apply rounded-[14px] p-2.5 min-w-0; background: var(--panel); }
+  .col h3 { @apply flex justify-between items-baseline text-[14px] px-1.5 pt-1 pb-2 gap-2; }
+  .col h3 span { @apply whitespace-nowrap; }
+  .col h3 span { @apply text-[12.5px] font-normal text-ink3; }
+  .ccard { @apply block rounded-[10px] border border-line px-3 py-2.5 mb-2 no-underline text-[13.5px] leading-snug; background: var(--bg); }
+  .ccard:hover { border-color: var(--ink3); }
+  .ccard b { @apply block text-[14px]; }
+  .ccard .meta { @apply text-[12.5px]; }
+  .ccard.over { box-shadow: inset 3px 0 0 var(--color-red); }
 }

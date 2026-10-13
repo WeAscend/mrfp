@@ -8,7 +8,7 @@ import { timeline, openSignRequest, channelState } from "@/lib/services/comms";
 import { db, schema } from "@/db";
 import { and, eq, isNull, ne } from "drizzle-orm";
 import * as R from "@/lib/rules";
-import { StageChip, SCChips, Section } from "@/components/ui";
+import { StageChip, SCChips } from "@/components/ui";
 import { SetInactiveButton, BinButton } from "@/components/actionsClient";
 import { SelectField } from "@/components/fields";
 import { LeadScreen } from "./LeadScreen";
@@ -32,20 +32,21 @@ export default async function ClientPage({ params, searchParams }: { params: Pro
   return (
     <>
       {c.checklist && <div className="warn-box mb-3.5">Migration check-list: {c.checklist}</div>}
-      <Section className="!pb-0 !bg-panel">
+      <div className="hero !pb-0">
         <div className="flex flex-wrap justify-between gap-x-6 gap-y-4 items-start">
-          <div><h1>{R.displayName(c)} <span className="meta font-head font-medium">{c.clientCode}</span></h1><div className="flex flex-wrap gap-2 items-center mt-2"><StageChip stage={c.stage} /><SCChips list={c.specialConditions} empty="" />{c.stage === "INACTIVE" && c.inactiveReason && <span className="chip">{c.inactiveReason}</span>}{c.stage === "LEAD" && <Link href={`/clients/${c.id}?tab=lead`} className="link text-[13px]">Lead screen</Link>}</div></div>
-          <div className="flex flex-wrap gap-x-7 gap-y-3 text-[12.5px] font-semibold text-ink3 items-end">
-            <div className="flex flex-col gap-0.5">Owner<span className="text-[14px] text-ink">{t.isAdmin ? <SelectField kind="client" id={c.id} field="ownerCode" value={c.ownerCode} options={users.map(u => u.userCode)} className="!h-7 !text-[13px] !w-auto" /> : c.ownerCode}</span></div>
-            <div className="flex flex-col gap-0.5">Last contact<Link href={`/clients/${c.id}?tab=summary#notes`} className="text-[14px] text-ink font-semibold">{c.lastContact ? `${R.fmtDate(c.lastContact, false)} · ${R.daysBetween(c.lastContact, t.today)} days` : "—"}</Link></div>
-            <div className="flex flex-col gap-0.5">Next follow-up<Link href={`/clients/${c.id}?tab=summary#followups`} className={`text-[14px] font-semibold ${nf?.overdue ? "red" : "text-ink"}`}>{nf ? `${R.fmtDate(nf.date, false)}${nf.overdue ? " · overdue" : ""}` : "—"}</Link></div>
-            <div className="flex flex-col gap-0.5">Open claims<Link href={`/clients/${c.id}?tab=claims`} className="text-[14px] text-ink font-semibold">{open.length}</Link></div>
-            <div className="flex flex-col gap-0.5">Last updated<span className="text-[14px] text-ink font-semibold">{c.lastUpdatedBy ?? "—"}, {R.fmtDate(c.lastUpdatedAt.toISOString().slice(0, 10))}</span></div>
-            <div className="flex gap-2">{c.stage !== "INACTIVE" && <SetInactiveButton clientId={c.id} openClaims={open.length} name={R.displayName(c)} />}{t.isAdmin && <BinButton kind="client" id={c.id} />}</div>
-          </div>
+          <div className="min-w-0"><div className="meta mb-1.5"><Link href={c.stage === "LEAD" ? "/leads" : "/clients"} className="no-underline">{c.stage === "LEAD" ? "Leads" : "Clients"}</Link> › {c.clientCode || "No code yet"}</div><h1>{R.displayName(c)}</h1><div className="flex flex-wrap gap-2 items-center mt-2.5"><StageChip stage={c.stage} /><SCChips list={c.specialConditions} empty="" />{c.stage === "INACTIVE" && c.inactiveReason && <span className="chip">{c.inactiveReason}</span>}{c.stage === "LEAD" && <Link href={`/clients/${c.id}?tab=lead`} className="link text-[13px]">Lead screen</Link>}</div></div>
+          <div className="flex gap-2 flex-wrap">{c.stage !== "INACTIVE" && <SetInactiveButton clientId={c.id} openClaims={open.length} name={R.displayName(c)} />}{t.isAdmin && <BinButton kind="client" id={c.id} />}</div>
+        </div>
+        <div className="stat-row">
+          <div>Owner{t.isAdmin ? <SelectField kind="client" id={c.id} field="ownerCode" value={c.ownerCode} options={users.map(u => u.userCode)} className="!h-7 !text-[13px] !w-auto" /> : <span>{c.ownerCode}</span>}</div>
+          <div>Last contact<Link href={`/clients/${c.id}?tab=summary#notes`}>{c.lastContact ? `${R.fmtDate(c.lastContact, false)} · ${R.daysBetween(c.lastContact, t.today)} days` : "—"}</Link></div>
+          <div>Next follow-up<Link href={`/clients/${c.id}?tab=summary#followups`} className={nf?.overdue ? "red" : ""}>{nf ? `${R.fmtDate(nf.date, false)}${nf.overdue ? " · overdue" : ""}` : "—"}</Link></div>
+          <div>Open claims<Link href={`/clients/${c.id}?tab=claims`}>{open.length}</Link></div>
+          <div>Lead amount<span>{R.money(c.leadAmount)}</span></div>
+          <div>Last updated<span>{c.lastUpdatedBy ?? "—"}, {R.fmtDate(c.lastUpdatedAt.toISOString().slice(0, 10), false)}</span></div>
         </div>
         <nav className="tabs" aria-label="Client tabs">{tabs.map(([k, l]) => <Link key={k} href={`/clients/${c.id}?tab=${k}`} className={tab === k ? "on" : ""}>{l}</Link>)}</nav>
-      </Section>
+      </div>
       <div className="mt-5">
         {tab === "profile" ? <ProfileTab {...ctx} /> : tab === "claims" ? <ClaimsTab {...ctx} focus={sp.claim} /> : tab === "documents" ? <DocumentsTab {...ctx} /> : <SummaryTab {...ctx} />}
       </div>
