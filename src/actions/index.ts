@@ -10,7 +10,6 @@ import * as Clients from "@/lib/services/clients";
 import * as Claims from "@/lib/services/claims";
 import * as Org from "@/lib/services/org";
 import * as Imp from "@/lib/services/leadImport";
-import * as Billing from "@/lib/billing";
 import * as Comms from "@/lib/services/comms";
 import { db, schema } from "@/db";
 import { storage, safeName } from "@/lib/storage";
@@ -85,8 +84,6 @@ export async function updateAuthorityAction(id: string, patch: Parameters<typeof
 export async function upsertCompanyAction(input: Parameters<typeof Org.upsertCompany>[1]) { const t = await requireTenant(); const r = await run(() => Org.upsertCompany(t, input)); refresh(); return r; }
 export async function addMemberAction(input: Parameters<typeof Org.addMember>[1]) { const t = await requireAdmin(); const r = await run(() => Org.addMember(t, input), "User added"); refresh(); return r; }
 export async function updateOrgAction(patch: Parameters<typeof Org.updateOrg>[1]) { const t = await requireAdmin(); const r = await run(() => Org.updateOrg(t, patch), "Saved"); refresh(); return r; }
-export async function startCheckoutAction(plan: string) { const t = await requireAdmin(); let url = ""; try { url = await Billing.createCheckout(t.org.id, plan, t.user.email); } catch (e) { return { ok: false, error: (e as Error).message } as ActionResult; } redirect(url); }
-export async function openBillingPortalAction() { const t = await requireAdmin(); let url = ""; try { url = await Billing.createPortal(t.org.id); } catch (e) { return { ok: false, error: (e as Error).message } as ActionResult; } redirect(url); }
 
 // ---- communications & automation ----
 export async function logCallAction(clientId: string, input: Comms.CallInput) { const t = await requireTenant(); const r = await run(() => Comms.logCall(t, clientId, input), "Call logged"); refresh(); return r; }

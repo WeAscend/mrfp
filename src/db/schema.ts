@@ -10,7 +10,6 @@ const strArray = (name: string) => text(name).array().notNull().default([]);
 export const roleEnum = pgEnum("role", ["ADMIN", "USER"]);
 export const stageEnum = pgEnum("stage", ["LEAD", "ACTIVE", "INACTIVE"]);
 export const clientTypeEnum = pgEnum("client_type", ["INDIVIDUAL", "BUSINESS"]);
-export const subStatusEnum = pgEnum("subscription_status", ["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED"]);
 export const actionEnum = pgEnum("action_type", ["CREATED", "EDITED", "DELETED", "RESTORED"]);
 export const channelEnum = pgEnum("channel", ["EMAIL", "SMS"]);
 export const msgStatusEnum = pgEnum("message_status", ["QUEUED", "SENT", "DELIVERED", "OPENED", "BOUNCED", "FAILED", "RECEIVED"]);
@@ -66,19 +65,6 @@ export const invites = pgTable("invites", {
   role: roleEnum("role").notNull().default("USER"),
   token: text("token").notNull().unique(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-});
-
-export const subscriptions = pgTable("subscriptions", {
-  id: id(),
-  orgId: text("org_id").notNull().unique().references(() => organisations.id, { onDelete: "cascade" }),
-  plan: text("plan").notNull().default("trial"), // trial | solo | team | agency — prices live in Stripe
-  status: subStatusEnum("status").notNull().default("TRIALING"),
-  seats: integer("seats").notNull().default(1),
-  trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
-  stripeCustomerId: text("stripe_customer_id").unique(),
-  stripeSubscriptionId: text("stripe_subscription_id").unique(),
-  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ---------------- Reference data ----------------
@@ -409,7 +395,7 @@ export const noteRelations = relations(notes, ({ one }) => ({ client: one(client
 export const searchLogRelations = relations(searchLog, ({ one }) => ({ client: one(clients, { fields: [searchLog.clientId], references: [clients.id] }) }));
 export const attachmentRelations = relations(attachments, ({ one }) => ({ client: one(clients, { fields: [attachments.clientId], references: [clients.id] }) }));
 export const membershipRelations = relations(memberships, ({ one }) => ({ org: one(organisations, { fields: [memberships.orgId], references: [organisations.id] }), user: one(users, { fields: [memberships.userId], references: [users.id] }) }));
-export const orgRelations = relations(organisations, ({ many, one }) => ({ members: many(memberships), subscription: one(subscriptions, { fields: [organisations.id], references: [subscriptions.orgId] }) }));
+export const orgRelations = relations(organisations, ({ many }) => ({ members: many(memberships) }));
 export const haRelations = relations(holdingAuthorities, ({ many }) => ({ claims: many(claims) }));
 export const messageRelations = relations(messages, ({ one }) => ({ client: one(clients, { fields: [messages.clientId], references: [clients.id] }), claim: one(claims, { fields: [messages.claimId], references: [claims.id] }) }));
 export const consentRelations = relations(consents, ({ one }) => ({ client: one(clients, { fields: [consents.clientId], references: [clients.id] }) }));

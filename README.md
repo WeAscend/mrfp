@@ -9,7 +9,6 @@ Built from the MRFP v7 handover pack (Spec, Field Reference, mockups, test data)
 - **PostgreSQL** via **Drizzle ORM** (pure JS, no native binaries) — migrations in `drizzle/`
 - Sessions with `iron-session` (email + password, bcrypt); roles **Admin / User** per organisation
 - File storage behind one interface: local disk (`STORAGE_DRIVER=local`) or S3-compatible (`STORAGE_DRIVER=s3`)
-- **Stripe** subscriptions (plumbing wired; plan prices are placeholders until pricing is set)
 - Tests: Vitest for the rules; Playwright smoke test for the flows
 
 ## Layout
@@ -46,7 +45,6 @@ Any Node host plus a Postgres database works — Vercel + Neon/Supabase, Railway
 1. Create a Postgres database; set `DATABASE_URL`.
 2. Set `SESSION_SECRET` (32+ random chars), `APP_URL`.
 3. Files: `STORAGE_DRIVER=s3` with `S3_BUCKET`, `S3_REGION` (and `S3_ENDPOINT` for R2/MinIO) plus AWS credentials in the environment. Local disk is fine for a single-machine install.
-4. Billing (optional until pricing is set): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_SOLO|TEAM|AGENCY`; point a Stripe webhook at `/api/stripe/webhook` for `checkout.session.completed`, `customer.subscription.updated|deleted`.
 5. `npx drizzle-kit migrate` on deploy, then `npm run build && npm start`.
 
 Sign-up at `/signup` creates an organisation with the standard Holding Authorities, a 30-day trial subscription and the first Admin.

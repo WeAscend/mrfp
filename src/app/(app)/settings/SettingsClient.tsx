@@ -1,7 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updateTemplateAction, updateAuthorityAction, upsertCompanyAction, addMemberAction, updateOrgAction, startCheckoutAction, openBillingPortalAction, type ActionResult } from "@/actions";
+import { updateTemplateAction, updateAuthorityAction, upsertCompanyAction, addMemberAction, updateOrgAction, type ActionResult } from "@/actions";
 import type { HoldingAuthority, OriginatingCompany, Organisation } from "@/db/schema";
 import { useToast } from "@/components/Toast";
 
@@ -44,11 +44,6 @@ export function OrgForm({ org }: { org: Organisation }) {
     <label className="label">A2A chase after (business days)<input className="input" type="number" value={f.a2aChaseBusinessDays} onChange={e => setF({ ...f, a2aChaseBusinessDays: Number(e.target.value) })} /></label><label className="label">Revisit leads after (months)<input className="input" type="number" value={f.revisitMonths} onChange={e => setF({ ...f, revisitMonths: Number(e.target.value) })} /></label>
     <div><button className="btn btn-primary" disabled={pending} onClick={() => act(() => updateOrgAction(f))}>Save</button></div>
   </div>;
-}
-export function PlanButtons({ enabled, plans, hasBilling }: { enabled: boolean; plans: { key: string; name: string; available: boolean }[]; hasBilling: boolean }) {
-  const { toast } = useToast();
-  if (!enabled) return <div className="meta">Billing is not connected yet. Set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET and the STRIPE_PRICE_* ids in the environment to turn on checkout — the plumbing (customer, checkout, webhook sync, seat limits) is already wired.</div>;
-  return <div className="flex flex-wrap gap-2">{plans.map(p => <form key={p.key} action={async () => { const r = await startCheckoutAction(p.key); if (r && !r.ok) toast(r.error, "err"); }}><button className="btn btn-primary" disabled={!p.available}>Choose {p.name}</button></form>)}{hasBilling && <form action={async () => { const r = await openBillingPortalAction(); if (r && !r.ok) toast(r.error, "err"); }}><button className="btn">Manage billing</button></form>}</div>;
 }
 
 export function OutreachForm({ org }: { org: Organisation }) {

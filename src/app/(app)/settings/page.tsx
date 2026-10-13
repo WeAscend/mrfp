@@ -4,10 +4,9 @@ import { db, schema } from "@/db";
 import { requireAdmin } from "@/lib/tenant";
 import { authorityMap, companies } from "@/lib/services/queries";
 import { members } from "@/lib/services/org";
-import { PLANS, stripeEnabled } from "@/lib/billing";
 import * as R from "@/lib/rules";
 import { Empty } from "@/components/ui";
-import { AuthorityRow, CompanyForm, AddUserForm, OrgForm, PlanButtons, OutreachForm, TemplateEditor } from "./SettingsClient";
+import { AuthorityRow, CompanyForm, AddUserForm, OrgForm, OutreachForm, TemplateEditor } from "./SettingsClient";
 import { templates } from "@/lib/services/comms";
 import { PLACEHOLDERS, DEFAULT_TEMPLATES } from "@/lib/templates";
 import { RunAutomationButton } from "@/components/commsClient";
@@ -16,9 +15,9 @@ import { smsDriver } from "@/lib/sms";
 import { BinButton } from "@/components/actionsClient";
 import { PageHead } from "@/components/PageHead";
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string; billing?: string }> }) {
-  const t = await requireAdmin(); const { tab = "authorities", billing } = await searchParams;
-  const tabs = [["authorities", "Holding Authorities & Companies"], ["outreach", "Outreach & templates"], ["users", "Users"], ["org", "Organisation & plan"], ["bin", "Bin"]];
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const t = await requireAdmin(); const { tab = "authorities" } = await searchParams;
+  const tabs = [["authorities", "Holding Authorities & Companies"], ["outreach", "Outreach & templates"], ["users", "Users"], ["org", "Organisation"], ["bin", "Bin"]];
   let body: React.ReactNode = null;
   if (tab === "authorities") {
     const [{ list }, ocs] = await Promise.all([authorityMap(t), companies(t)]);
@@ -43,16 +42,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <div className="overflow-x-auto -mx-2"><table className="tbl"><thead><tr><th>Code</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody>{ms.map(m => <tr key={m.id}><td><b>{m.userCode}</b></td><td>{m.user.name}</td><td>{m.user.email}</td><td>{m.role === "ADMIN" ? "Admin" : "User"}</td><td>{m.active ? "Active" : "Disabled"}</td></tr>)}</tbody></table></div>
       <h2 className="mt-5">Add user</h2><AddUserForm /></div>;
   } else if (tab === "org") {
-    const sub = await db.query.subscriptions.findFirst({ where: eq(schema.subscriptions.orgId, t.org.id) });
-    body = <>
-      {billing === "success" && <div className="bg-lime-soft border border-lime rounded-lg px-3.5 py-2.5 mb-4 text-[14px]">Subscription started. It can take a moment for the plan below to update.</div>}
-      <div className="card"><h2>Organisation</h2><OrgForm org={t.org} /></div>
-      <div className="card mt-5"><h2>Plan</h2>
-        <p className="meta mb-3">Current plan: <b>{sub?.plan ?? "trial"}</b> · {sub?.status.toLowerCase()}{sub?.trialEndsAt && sub.status === "TRIALING" ? ` · trial ends ${R.fmtDate(sub.trialEndsAt.toISOString().slice(0, 10))}` : ""} · {sub?.seats ?? 1} seat{(sub?.seats ?? 1) === 1 ? "" : "s"}{sub?.currentPeriodEnd ? ` · renews ${R.fmtDate(sub.currentPeriodEnd.toISOString().slice(0, 10))}` : ""}</p>
-        <div className="flex flex-wrap gap-4">{PLANS.map(p => <div key={p.key} className={`border rounded-[10px] p-4 flex-1 basis-[200px] ${sub?.plan === p.key ? "border-lime shadow-[0_0_0_3px_#EEF5D6]" : "border-line"}`}><div className="font-head font-semibold">{p.name}{sub?.plan === p.key && <span className="chip chip-lime ml-2">current</span>}</div><div className="font-head text-[26px] font-bold">{p.priceId ? "See checkout" : "$— / mo"}</div><div className="meta">{p.seats} seat{p.seats > 1 ? "s" : ""} · {p.blurb}</div></div>)}</div>
-        <div className="mt-4"><PlanButtons enabled={stripeEnabled()} plans={PLANS.map(p => ({ key: p.key, name: p.name, available: !!p.priceId }))} hasBilling={!!sub?.stripeCustomerId} /></div>
-      </div>
-    </>;
+    body = <div className="card"><h2>Organisation</h2><OrgForm org={t.org} /></div>;
   } else {
     const cs = await db.query.clients.findMany({ where: (c, { and, eq, isNotNull }) => and(eq(c.orgId, t.org.id), isNotNull(c.deletedAt)) });
     const ks = await db.query.claims.findMany({ where: (k, { and, eq, isNotNull }) => and(eq(k.orgId, t.org.id), isNotNull(k.deletedAt)), with: { client: true } });

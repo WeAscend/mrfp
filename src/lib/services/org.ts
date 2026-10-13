@@ -25,7 +25,6 @@ export async function signUp(input: { orgName: string; shortName: string; name: 
     const [user] = await tx.insert(schema.users).values({ email, name: input.name.trim(), passwordHash }).returning();
     const userCode = userCodeFor(input.name, new Set());
     const [m] = await tx.insert(schema.memberships).values({ orgId: org.id, userId: user.id, userCode, role: "ADMIN" }).returning();
-    await tx.insert(schema.subscriptions).values({ orgId: org.id, plan: "trial", status: "TRIALING", seats: 1, trialEndsAt: new Date(Date.now() + 30 * 86400000) });
     await tx.insert(schema.holdingAuthorities).values(R.STANDARD_AUTHORITIES.map((a, i) => ({ orgId: org.id, name: a.name, code: a.code, chaseAfter: a.chaseAfter, rechaseAfter: a.rechaseAfter, sortOrder: i })));
     await logActivity(tx, org.id, userCode, { action: "CREATED", entityType: "User", entityId: m.id, recordRef: userCode, newValue: "Organisation created" });
     return { org, user, membership: m };
@@ -43,9 +42,7 @@ export async function addMember(t: Tenant, input: { name: string; email: string;
   if (!t.isAdmin) throw new Error("Admin only");
   const code = input.userCode.trim().toUpperCase(); if (!/^[A-Z]{1,3}\d{1,2}$/.test(code)) throw new Error("User code is initials + a number, e.g. MT2");
   const email = input.email.trim().toLowerCase();
-  const sub = await db.query.subscriptions.findFirst({ where: eq(schema.subscriptions.orgId, t.org.id) });
   const members = await db.select().from(schema.memberships).where(and(eq(schema.memberships.orgId, t.org.id), eq(schema.memberships.active, true)));
-  if (sub && sub.plan !== "trial" && members.length >= sub.seats) throw new Error(`Your plan has ${sub.seats} seat(s). Add seats under Settings › Organisation & plan.`);
   if (members.some(m => m.userCode === code)) throw new Error(`User code ${code} is taken`);
   return db.transaction(async tx => {
     let u = await tx.query.users.findFirst({ where: eq(schema.users.email, email) });
