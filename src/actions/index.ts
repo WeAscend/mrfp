@@ -11,6 +11,7 @@ import * as Claims from "@/lib/services/claims";
 import * as Org from "@/lib/services/org";
 import * as Imp from "@/lib/services/leadImport";
 import * as Billing from "@/lib/billing";
+import * as Comms from "@/lib/services/comms";
 import { db, schema } from "@/db";
 import { storage, safeName } from "@/lib/storage";
 import { logActivity } from "@/lib/tenant";
@@ -24,11 +25,11 @@ export async function signUpAction(_: unknown, form: FormData): Promise<ActionRe
   const p = z.object({ orgName: z.string().min(2), shortName: z.string().min(1).max(6), name: z.string().min(2), email: z.string().email(), password: z.string().min(10) }).safeParse(Object.fromEntries(form));
   if (!p.success) return { ok: false, error: "Check the form: organisation name, short name (e.g. MRF), your name, a valid email and a password of 10+ characters." };
   try { await Org.ensureHolidays(); const r = await Org.signUp(p.data); const s = await getSession(); s.userId = r.user.id; s.orgId = r.org.id; await s.save(); } catch (e) { return { ok: false, error: (e as Error).message }; }
-  redirect("/leads");
+  redirect("/today");
 }
 export async function logInAction(_: unknown, form: FormData): Promise<ActionResult> {
   try { const r = await Org.logIn(String(form.get("email") || ""), String(form.get("password") || "")); const s = await getSession(); s.userId = r.userId; s.orgId = r.orgId; await s.save(); } catch (e) { return { ok: false, error: (e as Error).message }; }
-  redirect("/leads");
+  redirect("/today");
 }
 export async function logOutAction() { const s = await getSession(); s.destroy(); redirect("/login"); }
 
@@ -86,3 +87,14 @@ export async function addMemberAction(input: Parameters<typeof Org.addMember>[1]
 export async function updateOrgAction(patch: Parameters<typeof Org.updateOrg>[1]) { const t = await requireAdmin(); const r = await run(() => Org.updateOrg(t, patch), "Saved"); refresh(); return r; }
 export async function startCheckoutAction(plan: string) { const t = await requireAdmin(); let url = ""; try { url = await Billing.createCheckout(t.org.id, plan, t.user.email); } catch (e) { return { ok: false, error: (e as Error).message } as ActionResult; } redirect(url); }
 export async function openBillingPortalAction() { const t = await requireAdmin(); let url = ""; try { url = await Billing.createPortal(t.org.id); } catch (e) { return { ok: false, error: (e as Error).message } as ActionResult; } redirect(url); }
+
+// ---- communications & automation ----
+export async function logCallAction(clientId: string, input: Comms.CallInput) { const t = await requireTenant(); const r = await run(() => Comms.logCall(t, clientId, input), "Call logged"); refresh(); return r; }
+export async function recordConsentAction(clientId: string, channel: Comms.Channel, granted: boolean, method: string, note?: string) { const t = await requireTenant(); const r = await run(() => Comms.recordConsent(t, clientId, channel, granted, method, note), granted ? "Consent recorded" : "Opt-out recorded"); refresh(); return r; }
+export async function previewMessageAction(clientId: string, key: string, claimId?: string | null) { const t = await requireTenant(); return run(() => Comms.preview(t, clientId, key, claimId)); }
+export async function sendMessageAction(input: Comms.SendOpts) { const t = await requireTenant(); const r = await run(() => Comms.sendToClient(t, input), "Sent"); refresh(); return r; }
+export async function chaseAuthorityAction(claimId: string, opts?: { to?: string; overrideBody?: string; overrideSubject?: string }) { const t = await requireTenant(); const r = await run(() => Comms.chaseAuthority(t, claimId, opts), "Chase email sent"); refresh(); return r; }
+export async function sendA2AAction(clientId: string, via: "EMAIL" | "SMS" | "BOTH", feePct: number, claimId?: string | null) { const t = await requireTenant(); const r = await run(() => Comms.createSignRequest(t, clientId, { via, feePct, claimId }), "Authority to Act sent for signature"); refresh(); return r; }
+export async function cancelSignRequestAction(id: string) { const t = await requireTenant(); const r = await run(() => Comms.cancelSignRequest(t, id), "Cancelled"); refresh(); return r; }
+export async function updateTemplateAction(key: string, patch: { subject?: string | null; body?: string; active?: boolean }) { const t = await requireAdmin(); const r = await run(() => Comms.updateTemplate(t, key, patch), "Template saved"); refresh(); return r; }
+export async function runAutomationNowAction() { const t = await requireAdmin(); const r = await run(() => Comms.runDaily(t.org.id), "Automation run"); refresh(); return r; }

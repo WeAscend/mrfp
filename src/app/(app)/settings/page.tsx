@@ -7,23 +7,35 @@ import { members } from "@/lib/services/org";
 import { PLANS, stripeEnabled } from "@/lib/billing";
 import * as R from "@/lib/rules";
 import { Empty } from "@/components/ui";
-import { AuthorityRow, CompanyForm, AddUserForm, OrgForm, PlanButtons } from "./SettingsClient";
+import { AuthorityRow, CompanyForm, AddUserForm, OrgForm, PlanButtons, OutreachForm, TemplateEditor } from "./SettingsClient";
+import { templates } from "@/lib/services/comms";
+import { PLACEHOLDERS, DEFAULT_TEMPLATES } from "@/lib/templates";
+import { RunAutomationButton } from "@/components/commsClient";
+import { mailDriver } from "@/lib/mail";
+import { smsDriver } from "@/lib/sms";
 import { BinButton } from "@/components/actionsClient";
 import { PageHead } from "@/components/PageHead";
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string; billing?: string }> }) {
   const t = await requireAdmin(); const { tab = "authorities", billing } = await searchParams;
-  const tabs = [["authorities", "Holding Authorities & Companies"], ["users", "Users"], ["org", "Organisation & plan"], ["bin", "Bin"]];
+  const tabs = [["authorities", "Holding Authorities & Companies"], ["outreach", "Outreach & templates"], ["users", "Users"], ["org", "Organisation & plan"], ["bin", "Bin"]];
   let body: React.ReactNode = null;
   if (tab === "authorities") {
     const [{ list }, ocs] = await Promise.all([authorityMap(t), companies(t)]);
     const counts = Object.fromEntries((await db.select({ a: schema.claims.authorityId }).from(schema.claims).where(and(eq(schema.claims.orgId, t.org.id), isNull(schema.claims.deletedAt)))).reduce((m, r) => m.set(r.a, (m.get(r.a) ?? 0) + 1), new Map<string, number>()));
     body = <>
       <div className="card"><h2>Holding Authorities</h2><p className="meta mb-3">Authority Code is the first letter of every Claim ID — a claim cannot be opened against an authority without one. Chase after / Re-chase after (days) drive the Holding Authority follow-up list. Names must match the Search Results values used on leads.</p>
-        <div className="overflow-x-auto -mx-2"><table className="tbl"><thead><tr><th>Name</th><th>Code</th><th className="num">Chase after (days)</th><th className="num">Re-chase after</th><th>Processing details</th><th className="num">Claims</th></tr></thead><tbody>{list.map(a => <AuthorityRow key={a.id} a={a} claims={counts[a.id] ?? 0} />)}</tbody></table></div></div>
+        <div className="overflow-x-auto -mx-2"><table className="tbl"><thead><tr><th>Name</th><th>Code</th><th className="num">Chase after (days)</th><th className="num">Re-chase after</th><th>Processing details</th><th>Chase email</th><th className="num">Claims</th></tr></thead><tbody>{list.map(a => <AuthorityRow key={a.id} a={a} claims={counts[a.id] ?? 0} />)}</tbody></table></div></div>
       <div className="card mt-5"><h2>Originating Companies</h2><p className="meta mb-3">The company the money originated from (bank, insurer, employer). Previous Names / Acquired By records mergers and renames on the surviving company so searches still find it.</p>
         <div className="overflow-x-auto -mx-2"><table className="tbl"><thead><tr><th>Name</th><th>Previous names / acquired by</th><th>Mailing address</th><th>Details</th><th></th></tr></thead><tbody>{ocs.map(o => <CompanyForm key={o.id} o={o} />)}{!ocs.length && <tr><td colSpan={5}><Empty>None yet.</Empty></td></tr>}</tbody></table></div>
         <div className="mt-3"><CompanyForm /></div></div>
+    </>;
+  } else if (tab === "outreach") {
+    const tpls = await templates(t);
+    body = <>
+      <div className="card"><h2>Sender identity & automation</h2><p className="meta mb-3">Email: <b>{mailDriver() === "resend" ? "connected (Resend)" : "not connected — messages are logged only"}</b> · SMS: <b>{smsDriver() === "twilio" ? "connected (Twilio)" : "not connected"}</b>. Every email carries these details and an unsubscribe link; every SMS ends with "Reply STOP to opt out".</p><OutreachForm org={t.org} /><div className="mt-4 pt-3 border-t border-line flex items-center gap-3"><RunAutomationButton /><span className="meta">Reminders normally run once a day (vercel.json cron). Use this to send any that are due right now.</span></div></div>
+      <div className="card mt-5"><h2>Templates</h2><p className="meta mb-3">Plain text. Placeholders: {PLACEHOLDERS.map(([k]) => <code key={k} className="mr-1.5">{k}</code>)}</p>
+        <div className="flex flex-col gap-3">{tpls.map(x => <div key={x.key}><TemplateEditor t={x} /><div className="meta mt-1 ml-1">{DEFAULT_TEMPLATES.find(d => d.key === x.key)?.when}</div></div>)}</div></div>
     </>;
   } else if (tab === "users") {
     const ms = await members(t);

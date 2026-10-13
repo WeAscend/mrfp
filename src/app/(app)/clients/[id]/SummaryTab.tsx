@@ -2,9 +2,12 @@ import * as R from "@/lib/rules";
 import { Section, FollowUpItem, ClaimLink, ClientLink, Empty } from "@/components/ui";
 import { DateField, SelectField, Static } from "@/components/fields";
 import { Notes } from "./Notes";
+import { Timeline } from "@/components/Timeline";
+import { ConsentChips, LogCallButton, CancelSignButton } from "@/components/commsClient";
+import { firstEmail } from "@/lib/services/comms";
 import type { Ctx } from "./ctx";
 
-export function SummaryTab({ t, c, fus, byId, related }: Ctx) {
+export function SummaryTab({ t, c, fus, byId, related, tl, openSign, emailState, smsState }: Ctx) {
   const open = c.claims.filter(R.isOpen);
   const ids: [string, "idLicence" | "idPassport" | "idMedicare" | "idOther"][] = [["Licence", "idLicence"], ["Passport", "idPassport"], ["Medicare", "idMedicare"], ["Other", "idOther"]];
   return (
@@ -16,6 +19,7 @@ export function SummaryTab({ t, c, fus, byId, related }: Ctx) {
           {!open.length && <tr><td colSpan={4}><Empty>No open claims.</Empty></td></tr>}
         </tbody></table></div></Section>
         <Notes c={c} t={t} byId={byId} />
+        <Timeline items={tl} right={<span className="inline-flex gap-2 items-center flex-wrap"><ConsentChips clientId={c.id} email={emailState} sms={smsState} compact /><LogCallButton clientId={c.id} hasEmail={!!firstEmail(c.email)} emailState={emailState} label="Log call" />{openSign && <CancelSignButton id={openSign.id} />}</span>} />
       </div>
       <div className="flex-1 basis-[380px] flex flex-col gap-5 min-w-0">
         <Section title="Contact"><div className="grid2"><Static label="Mobile">{c.phoneMobile}</Static><Static label="Other">{c.phoneOther}</Static><Static label="Email" className="span2">{c.email}</Static><Static label="Current address" className="span2">{c.currentAddress}</Static>{c.clientType === "BUSINESS" && <Static label="Business contact" className="span2">{c.businessContact}</Static>}{c.addressOnUCM && <Static label="Address on UCM" className="span2">{c.addressOnUCM}</Static>}</div></Section>

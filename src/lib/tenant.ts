@@ -45,3 +45,13 @@ const str = (v: unknown) => (Array.isArray(v) ? v.join(", ") : String(v)).slice(
 export async function logActivity(tx: Pick<typeof db, "insert">, orgId: string, userCode: string, e: LogEntry) {
   await tx.insert(schema.activityLog).values({ orgId, userCode: e.userCode ?? userCode, action: e.action, entityType: e.entityType, entityId: e.entityId ?? null, recordRef: e.recordRef, field: e.field ?? null, oldValue: e.oldValue == null ? null : str(e.oldValue), newValue: e.newValue == null ? null : str(e.newValue), ...(e.timestamp ? { timestamp: e.timestamp } : {}) });
 }
+
+/** A tenant context for work nobody is logged in for: signing pages, unsubscribe links, the daily automation run. Acts as "System". */
+export async function systemTenant(orgId: string, userCode = "System"): Promise<Tenant> {
+  const org = await db.query.organisations.findFirst({ where: eq(schema.organisations.id, orgId) });
+  if (!org) throw new Error("Organisation not found");
+  const regions = org.holidayRegions.split(",").map(r => r.trim()).filter(Boolean);
+  const hol = regions.length ? await db.select({ date: schema.holidays.date }).from(schema.holidays).where(inArray(schema.holidays.region, regions)) : [];
+  const membership = { id: "system", orgId, userId: "system", userCode, role: "ADMIN", active: true, createdAt: new Date() } as schema.Membership;
+  return { org, membership, user: { id: "system", email: "", name: userCode }, isAdmin: true, today: todayInZone("Australia/Sydney"), holidays: new Set(hol.map(h => h.date)) };
+}

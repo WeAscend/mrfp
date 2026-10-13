@@ -4,12 +4,14 @@ import { allFollowUps } from "@/lib/services/queries";
 import * as R from "@/lib/rules";
 import { ClientLink, ClaimLink, SCChips, Empty } from "@/components/ui";
 import { DoneButton, ChasedButton } from "@/components/actionsClient";
+import { ChaseEmailButton } from "@/components/commsClient";
+import { authorityMap } from "@/lib/services/queries";
 import { PageHead } from "@/components/PageHead";
 
 const KIND: Record<string, string> = { client: "Client follow-up", claim: "Claim follow-up", ha: "Authority follow-up", a2a: "A2A chase" };
 export default async function FollowUpsPage({ searchParams }: { searchParams: Promise<{ tab?: string; ha?: string }> }) {
   const t = await requireTenant(); const { tab = "due", ha = "" } = await searchParams;
-  const all = await allFollowUps(t);
+  const all = await allFollowUps(t); const { list: has } = await authorityMap(t); const haEmail = (name: string) => has.find(h => h.name === name)?.emails?.[0];
   let rows = tab === "a2a" ? all.filter(f => f.kind === "a2a") : tab === "ha" ? all.filter(f => f.kind === "ha" && f.due) : all.filter(f => f.due);
   if (tab === "ha" && ha) rows = rows.filter(f => f.claim?.authorityName === ha);
   const haNames = Array.from(new Set(all.filter(f => f.kind === "ha").map(f => f.claim!.authorityName))).sort();
@@ -27,7 +29,7 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
             <td><ClientLink c={f.client} /> <SCChips list={f.client.specialConditions} empty="" /></td>
             <td>{f.claim ? <><ClaimLink clientId={f.clientId} id={f.claim.id} claimId={f.claim.claimId} /><br /><small className="meta">{f.claim.authorityName}</small></> : "—"}</td>
             <td>{KIND[f.kind]}</td><td>{f.sub}</td><td>{f.client.ownerCode}</td><td>{f.setBy || "—"}</td>
-            <td>{f.kind === "ha" ? <ChasedButton claimId={f.claim!.id} /> : f.kind === "a2a" ? <Link href={`/clients/${f.clientId}${f.claim ? `?tab=claims&claim=${f.claim.id}` : ""}`} className="btn btn-sm">Open</Link> : <DoneButton kind={f.kind} clientId={f.clientId} claimId={f.claim?.id} />}</td>
+            <td className="whitespace-nowrap">{f.kind === "ha" ? <span className="inline-flex gap-1.5"><ChasedButton claimId={f.claim!.id} /><ChaseEmailButton claimId={f.claim!.id} to={haEmail(f.claim!.authorityName)} small /></span> : f.kind === "a2a" ? <Link href={`/clients/${f.clientId}${f.claim ? `?tab=claims&claim=${f.claim.id}` : ""}`} className="btn btn-sm">Open</Link> : <DoneButton kind={f.kind} clientId={f.clientId} claimId={f.claim?.id} />}</td>
           </tr>)}
           {!rows.length && <tr><td colSpan={8}><Empty>Nothing here.</Empty></td></tr>}
         </tbody></table></div>

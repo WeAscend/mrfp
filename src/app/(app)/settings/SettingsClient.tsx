@@ -1,7 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updateAuthorityAction, upsertCompanyAction, addMemberAction, updateOrgAction, startCheckoutAction, openBillingPortalAction, type ActionResult } from "@/actions";
+import { updateTemplateAction, updateAuthorityAction, upsertCompanyAction, addMemberAction, updateOrgAction, startCheckoutAction, openBillingPortalAction, type ActionResult } from "@/actions";
 import type { HoldingAuthority, OriginatingCompany, Organisation } from "@/db/schema";
 import { useToast } from "@/components/Toast";
 
@@ -16,6 +16,7 @@ export function AuthorityRow({ a, claims }: { a: HoldingAuthority; claims: numbe
     <td className="num"><input className="input !h-[30px] !w-[72px] text-right" defaultValue={a.chaseAfter ?? ""} onBlur={e => numOrNull(e.target.value) !== a.chaseAfter && save({ chaseAfter: numOrNull(e.target.value) })} aria-label="Chase after" /></td>
     <td className="num"><input className="input !h-[30px] !w-[72px] text-right" defaultValue={a.rechaseAfter ?? ""} onBlur={e => numOrNull(e.target.value) !== a.rechaseAfter && save({ rechaseAfter: numOrNull(e.target.value) })} aria-label="Re-chase after" /></td>
     <td><input className="input !h-[30px]" defaultValue={a.details ?? ""} onBlur={e => e.target.value !== (a.details ?? "") && save({ details: e.target.value })} aria-label="Processing details" /></td>
+    <td><input className="input !h-[30px] !w-[200px]" defaultValue={a.emails?.[0] ?? ""} placeholder="claims@…" onBlur={e => e.target.value !== (a.emails?.[0] ?? "") && save({ emails: e.target.value.trim() ? [e.target.value.trim()] : [] })} aria-label="Chase email" /></td>
     <td className="num">{claims}</td></tr>;
 }
 export function CompanyForm({ o }: { o?: OriginatingCompany }) {
@@ -48,4 +49,35 @@ export function PlanButtons({ enabled, plans, hasBilling }: { enabled: boolean; 
   const { toast } = useToast();
   if (!enabled) return <div className="meta">Billing is not connected yet. Set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET and the STRIPE_PRICE_* ids in the environment to turn on checkout — the plumbing (customer, checkout, webhook sync, seat limits) is already wired.</div>;
   return <div className="flex flex-wrap gap-2">{plans.map(p => <form key={p.key} action={async () => { const r = await startCheckoutAction(p.key); if (r && !r.ok) toast(r.error, "err"); }}><button className="btn btn-primary" disabled={!p.available}>Choose {p.name}</button></form>)}{hasBilling && <form action={async () => { const r = await openBillingPortalAction(); if (r && !r.ok) toast(r.error, "err"); }}><button className="btn">Manage billing</button></form>}</div>;
+}
+
+export function OutreachForm({ org }: { org: Organisation }) {
+  const [f, setF] = useState({ fromEmail: org.fromEmail ?? "", replyTo: org.replyTo ?? "", postalAddress: org.postalAddress ?? "", phone: org.phone ?? "", website: org.website ?? "", smsSenderId: org.smsSenderId ?? "", a2aReminderDays: org.a2aReminderDays, infoFollowUpDays: org.infoFollowUpDays, a2aTemplate: org.a2aTemplate ?? "" });
+  const { act, pending } = useAct(); const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
+  return <div className="flex flex-col gap-3.5">
+    <div className="grid2">
+      <label className="label">From email<input className="input" value={f.fromEmail} onChange={set("fromEmail")} placeholder="hello@myrefundfinder.com.au" /><span className="meta font-normal">Must be on a domain verified with the email provider.</span></label>
+      <label className="label">Reply-to<input className="input" value={f.replyTo} onChange={set("replyTo")} placeholder="defaults to the sender's own email" /></label>
+      <label className="label">Phone<input className="input" value={f.phone} onChange={set("phone")} /></label>
+      <label className="label">Website<input className="input" value={f.website} onChange={set("website")} /></label>
+      <label className="label span2">Postal address<input className="input" value={f.postalAddress} onChange={set("postalAddress")} placeholder="Shown in the footer of every email (Spam Act sender identification)" /></label>
+      <label className="label">SMS sender name<input className="input" value={f.smsSenderId} onChange={set("smsSenderId")} maxLength={11} placeholder="MRF" /></label>
+      <label className="label">A2A reminder days<input className="input" value={f.a2aReminderDays} onChange={set("a2aReminderDays")} placeholder="3,6" /><span className="meta font-normal">Days after sending, comma-separated.</span></label>
+      <label className="label">Info email follow-up (days)<input className="input !w-[120px]" type="number" value={f.infoFollowUpDays} onChange={e => setF({ ...f, infoFollowUpDays: Number(e.target.value) })} /></label>
+    </div>
+    <label className="label">Authority to Act wording (e-sign)<textarea className="input !text-[13.5px] font-mono" rows={14} value={f.a2aTemplate} onChange={set("a2aTemplate")} placeholder="Leave blank to use the built-in wording. Placeholders: {{name}} {{org}} {{feePct}} {{date}}" /></label>
+    <div><button className="btn btn-primary" disabled={pending} onClick={() => act(() => updateOrgAction({ ...f, fromEmail: f.fromEmail || null, replyTo: f.replyTo || null, postalAddress: f.postalAddress || null, phone: f.phone || null, website: f.website || null, smsSenderId: f.smsSenderId || null, a2aTemplate: f.a2aTemplate || null }))}>Save outreach settings</button></div>
+  </div>;
+}
+export function TemplateEditor({ t }: { t: { key: string; name: string; channel: string; subject: string | null; body: string; active: boolean } }) {
+  const [subject, setSubject] = useState(t.subject ?? ""); const [body, setBody] = useState(t.body); const [open, setOpen] = useState(false); const { act, pending } = useAct();
+  const dirty = subject !== (t.subject ?? "") || body !== t.body;
+  return <div className="card-plain">
+    <div className="flex flex-wrap items-center gap-3"><button type="button" className="font-head font-semibold text-[16px] text-left" onClick={() => setOpen(o => !o)}>{open ? "▾" : "▸"} {t.name}</button><span className="chip chip-outline">{t.channel}</span><span className="meta">{t.key}</span><span className="flex-1" /><label className="flex gap-2 items-center text-[14px]"><input type="checkbox" checked={t.active} onChange={e => act(() => updateTemplateAction(t.key, { active: e.target.checked }))} /> Active</label></div>
+    {open && <div className="mt-3 flex flex-col gap-3">
+      {t.channel === "EMAIL" && <label className="label">Subject<input className="input" value={subject} onChange={e => setSubject(e.target.value)} /></label>}
+      <label className="label">Body<textarea className="input !text-[13.5px]" rows={t.channel === "SMS" ? 4 : 12} value={body} onChange={e => setBody(e.target.value)} /></label>
+      <div className="flex gap-2"><button className="btn btn-primary btn-sm" disabled={pending || !dirty} onClick={() => act(() => updateTemplateAction(t.key, { subject: t.channel === "EMAIL" ? subject : null, body }))}>Save</button>{dirty && <button className="btn btn-sm" onClick={() => { setSubject(t.subject ?? ""); setBody(t.body); }}>Reset</button>}</div>
+    </div>}
+  </div>;
 }

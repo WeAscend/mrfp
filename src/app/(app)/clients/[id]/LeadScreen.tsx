@@ -4,21 +4,25 @@ import { Section, SCChips, FollowUpItem } from "@/components/ui";
 import { TextField, TextArea, SelectField, DateField, ChipMulti, MoneyField, Static } from "@/components/fields";
 import { LeadIdentifierSelect, A2ASignedField, SetInactiveButton, FileUpload } from "@/components/actionsClient";
 import { Notes } from "./Notes";
+import { Timeline } from "@/components/Timeline";
+import { ConsentChips, LogCallButton, SendMessageButton, SendA2AButton, CancelSignButton } from "@/components/commsClient";
+import { firstEmail } from "@/lib/services/comms";
+import { toE164 } from "@/lib/sms";
 import { Attachments } from "./DocumentsTab";
 import type { Ctx } from "./ctx";
 
 /** Spec 4.1: a single compact screen — typing kept to phones, contact details and notes as calls happen. */
-export function LeadScreen({ t, c, fus, byId }: Ctx) {
-  const search = c.searchLog[0];
+export function LeadScreen({ t, c, fus, byId, tl, openSign, emailState, smsState }: Ctx) {
+  const search = c.searchLog[0]; const hasEmail = !!firstEmail(c.email), hasMobile = !!toE164(c.phoneMobile);
   return (
     <>
       <div className="meta mb-2.5"><Link href="/leads" className="text-ink3">Leads</Link> › {c.leadIdentifier || "No identifier"}</div>
       {c.checklist && <div className="warn-box mb-3.5">Migration check-list: {c.checklist}</div>}
       <Section className="!bg-panel">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
-          <div className="flex-1 basis-[360px]"><h1>{R.displayName(c)}</h1><div className="flex flex-wrap gap-2 items-center mt-2"><span className="chip">Lead</span><SCChips list={c.specialConditions} empty="" /><span className="meta">{c.clientType === "BUSINESS" ? "Business" : "Individual"} · Owner <b>{c.ownerCode}</b> · Last updated by <b>{c.lastUpdatedBy ?? "—"}</b>, {R.fmtDate(c.lastUpdatedAt.toISOString().slice(0, 10))}</span></div></div>
+          <div className="flex-1 basis-[360px]"><h1>{R.displayName(c)}</h1><div className="flex flex-wrap gap-2 items-center mt-2"><span className="chip">Lead</span><SCChips list={c.specialConditions} empty="" /><ConsentChips clientId={c.id} email={emailState} sms={smsState} /><span className="meta">{c.clientType === "BUSINESS" ? "Business" : "Individual"} · Owner <b>{c.ownerCode}</b> · Last updated by <b>{c.lastUpdatedBy ?? "—"}</b>, {R.fmtDate(c.lastUpdatedAt.toISOString().slice(0, 10))}</span></div></div>
           <label className="label uppercase tracking-wider text-[12px]">Lead Identifier<LeadIdentifierSelect clientId={c.id} value={c.leadIdentifier} /></label>
-          <div className="flex gap-2.5 flex-wrap"><Link href={`/clients/${c.id}?tab=profile`} className="btn">Show full record</Link><a href="#noteBox" className="btn btn-primary">Log a call note</a><SetInactiveButton clientId={c.id} openClaims={0} name={R.displayName(c)} /></div>
+          <div className="flex gap-2.5 flex-wrap"><LogCallButton clientId={c.id} hasEmail={hasEmail} emailState={emailState} primary /><SendMessageButton clientId={c.id} templateKey="info_email" label="Send info email" /><SendA2AButton clientId={c.id} hasEmail={hasEmail} hasMobile={hasMobile} open={openSign} /><Link href={`/clients/${c.id}?tab=profile`} className="btn">Full record</Link><SetInactiveButton clientId={c.id} openClaims={0} name={R.displayName(c)} /></div>
         </div>
       </Section>
       <div className="flex flex-wrap gap-5 items-start mt-5">
@@ -49,6 +53,7 @@ export function LeadScreen({ t, c, fus, byId }: Ctx) {
             <div className="mt-3.5"><FileUpload clientId={c.id} label="Drop register or Acceleon screenshots here" /></div>
           </Section>
           <Notes c={c} t={t} byId={byId} />
+          <Timeline items={tl} right={openSign ? <span className="inline-flex gap-2 items-center"><span className="chip chip-amber">A2A awaiting signature · {openSign.remindersSent} reminder(s)</span><CancelSignButton id={openSign.id} /></span> : smsState === "ok" ? <SendMessageButton clientId={c.id} templateKey="info_sms" label="Send info SMS" small /> : null} />
         </div>
       </div>
     </>

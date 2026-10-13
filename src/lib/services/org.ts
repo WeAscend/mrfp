@@ -56,7 +56,7 @@ export async function addMember(t: Tenant, input: { name: string; email: string;
   });
 }
 export async function members(t: Tenant) { return db.query.memberships.findMany({ where: eq(schema.memberships.orgId, t.org.id), with: { user: true }, orderBy: (m, { asc }) => [asc(m.userCode)] }); }
-export async function updateAuthority(t: Tenant, id: string, patch: { code?: string | null; chaseAfter?: number | null; rechaseAfter?: number | null; details?: string | null; name?: string }) {
+export async function updateAuthority(t: Tenant, id: string, patch: { code?: string | null; chaseAfter?: number | null; rechaseAfter?: number | null; details?: string | null; name?: string; emails?: string[] }) {
   if (!t.isAdmin) throw new Error("Admin only");
   const a = await db.query.holdingAuthorities.findFirst({ where: and(eq(schema.holdingAuthorities.id, id), eq(schema.holdingAuthorities.orgId, t.org.id)) }); if (!a) throw new Error("Not found");
   if (patch.code != null) patch.code = patch.code.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 1) || null;
@@ -79,7 +79,7 @@ export async function upsertCompany(t: Tenant, input: { id?: string; name: strin
     return o.id;
   });
 }
-export async function updateOrg(t: Tenant, patch: { name?: string; shortName?: string; holidayRegions?: string; gstRate?: string; a2aChaseBusinessDays?: number; revisitMonths?: number }) {
+export async function updateOrg(t: Tenant, patch: { name?: string; shortName?: string; holidayRegions?: string; gstRate?: string; a2aChaseBusinessDays?: number; revisitMonths?: number; fromEmail?: string | null; replyTo?: string | null; postalAddress?: string | null; phone?: string | null; website?: string | null; smsSenderId?: string | null; a2aTemplate?: string | null; a2aReminderDays?: string; infoFollowUpDays?: number }) {
   if (!t.isAdmin) throw new Error("Admin only");
   await db.update(schema.organisations).set(patch).where(eq(schema.organisations.id, t.org.id));
 }

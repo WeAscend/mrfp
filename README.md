@@ -51,6 +51,28 @@ Any Node host plus a Postgres database works — Vercel + Neon/Supabase, Railway
 
 Sign-up at `/signup` creates an organisation with the standard Holding Authorities, a 30-day trial subscription and the first Admin.
 
+## Outreach, consent and automation
+
+Built for the Spam Act 2003 (Cth): a marketing email or SMS to a client goes out only when consent is recorded on the
+record for that channel and never after an opt-out; every email carries the organisation's identity (Settings › Outreach)
+and an unsubscribe link (`/u/<token>`, plus RFC 8058 one-click), every SMS ends "Reply STOP to opt out" (handled by
+`/api/sms/inbound`). Cold contact stays on the phone (Do Not Call Register washing happens outside the app).
+
+- **Log a call** (lead screen / summary): outcome buttons set the Lead Identifier and follow-up, tick boxes capture
+  email/SMS consent with who/when/how, and can send the information email in the same step.
+- **Templates** (Settings › Outreach): info email, A2A sign link + reminders, ID request, holding-authority chase,
+  invoice, SMS variants. Plain text with `{{placeholders}}`; previewed and editable before each send.
+- **In-house e-sign** for the Authority to Act: `/sign/<token>` shows the wording from Settings, captures a drawn or
+  typed signature, name, time, IP and device, writes a PDF into Documents, and runs the A2A Signed rule (lead → Active +
+  Client Code). Reminders go on the configured days (`/api/cron/daily`, scheduled in `vercel.json`).
+- **Holding-authority chase by email** from the claim card, Follow-ups or Today: sends the status request and records
+  Chased.
+- **Today** (`/today`): calls to make, A2As awaiting signature, authorities to chase, refunds to invoice.
+- Providers: Resend (`RESEND_API_KEY`, `MAIL_FROM`) and Twilio (`TWILIO_*`). With neither set, messages are recorded
+  with status SENT and printed to the server log so every flow can be exercised locally. Webhooks: `/api/mail/webhook`
+  (delivered / opened / bounced → bounce or complaint records an email opt-out), `/api/sms/inbound`.
+- Browser test of the whole loop: `node scripts/e2e-comms.js` against a seeded server on :3100.
+
 ## Migrating a business from Airtable
 
 ```bash

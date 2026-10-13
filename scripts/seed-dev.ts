@@ -15,6 +15,7 @@ const arg = (k: string, def?: string) => { const i = process.argv.indexOf(`--${k
   if (existing) { console.log("Removing previous demo organisation…"); await db.delete(schema.organisations).where(eq(schema.organisations.id, existing.id)); await db.delete(schema.users).where(eq(schema.users.email, "mt@example.test")); await db.delete(schema.users).where(eq(schema.users.email, "jb@example.test")); }
   await signUp({ orgName: "My Refund Finder", shortName: "MRF", name: "Marta Taylor", email: "mt@example.test", password: "password1234" });
   const t = await tenantFor("my-refund-finder", "mt@example.test");
+  await db.update(schema.organisations).set({ phone: "1300 000 000", postalAddress: "PO Box 123, Sydney NSW 2000", website: "myrefundfinder.com.au", smsSenderId: "MRF" }).where(eq(schema.organisations.id, t.org.id));
   await addMember(t, { name: "Jo Bloggs", email: "jb@example.test", userCode: "JB2", role: "USER", password: "password1234" });
   const dir = arg("dir"); if (!dir) { console.log("Seeded organisation only (no --dir given)."); process.exit(0); }
   const report = await migrateAirtable(t, readFiles(dir), "MT1", t.today);

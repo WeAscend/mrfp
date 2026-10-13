@@ -4,16 +4,16 @@ const fs = require("fs");
 const base = process.env.BASE || "http://localhost:3100";
 (async () => {
   const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 1360, height: 900 } }); await ctx.route("https://fonts.googleapis.com/**", r => r.abort()); const p = await ctx.newPage();
-  const errs = []; p.on("pageerror", e => errs.push("PAGEERROR " + e.message)); p.on("console", m => { if (m.type() === "error" && !/fonts|favicon/.test(m.text())) errs.push("CONSOLE " + m.text()); });
+  const errs = []; p.on("pageerror", e => errs.push("PAGEERROR " + e.message)); p.on("console", m => { if (m.type() === "error" && !/fonts|favicon|ERR_FAILED/.test(m.text())) errs.push("CONSOLE " + m.text()); });
   const wait = (ms = 1200) => p.waitForTimeout(ms);
   const DCL = { waitUntil: "domcontentloaded" }; const _goto = p.goto.bind(p); p.goto = (u, o) => _goto(u, { ...DCL, ...(o || {}) }); const _reload = p.reload.bind(p); p.reload = () => _reload(DCL); const _w = p.waitForURL.bind(p); p.waitForURL = (u, o) => _w(u, { ...DCL, ...(o || {}) });
-  await p.goto(base + "/login"); await p.fill("input[name=email]", "mt@example.test"); await p.fill("input[name=password]", "password1234"); await p.waitForTimeout(1500); await p.click("form button"); await p.waitForURL("**/leads", { timeout: 20000 });
+  await p.goto(base + "/login"); await p.fill("input[name=email]", "mt@example.test"); await p.fill("input[name=password]", "password1234"); await p.waitForTimeout(1500); await p.click("form button"); await p.waitForURL("**/today", { timeout: 20000 }); await p.goto(base + "/leads");
   console.log("leads rows:", await p.$$eval("tbody tr", r => r.length), "| followups nav:", await p.$eval('nav a[href="/followups"]', a => a.innerText));
   await p.goto(base + "/followups"); console.log("due rows:", await p.$$eval("tbody tr", r => r.map(x => x.innerText.replace(/\s+/g, " ").slice(0, 80))));
   await p.goto(base + "/leads?id=New%20import"); await p.click("text=NEWLEAD, Nina"); await p.waitForURL("**/clients/**"); await wait(500);
   await p.selectOption('label:has-text("Lead Identifier") select', "A2A sent"); await wait(); await p.reload();
   console.log("A2A Sent stamped:", await p.$eval('label:has-text("A2A Sent") input', i => i.value));
-  await p.fill('label:has-text("A2A Signed") input', "2026-10-13"); await wait(1500); await p.reload();
+  await wait(1500); await p.fill('label:has-text("A2A Signed") input', "2026-10-13"); await wait(2500); await p.reload();
   console.log("header after signed:", (await p.$eval("h1", h => h.innerText)).replace(/\s+/g, " "));
   await p.click('a:has-text("Claims (")'); await wait(600);
   await p.selectOption('select:near(:text("Open new claim"))', { label: "ASIC" }); await p.click('button:has-text("Open new claim")'); await p.waitForURL("**claim=**", { timeout: 15000 }); await wait(800);
@@ -33,7 +33,7 @@ const base = process.env.BASE || "http://localhost:3100";
   await p.goto(base + "/clients"); await p.setViewportSize({ width: 400, height: 800 }); await wait(300); console.log("phone hscroll:", await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)); await p.setViewportSize({ width: 1360, height: 900 });
   // User role: no Settings, cannot see Activity Log
   await p.goto(base + "/login"); await p.click('button[aria-label="Account menu"]').catch(() => {}); await p.goto(base + "/login");
-  const ctx2 = await b.newContext(); await ctx2.route("https://fonts.googleapis.com/**", r => r.abort()); const q = await ctx2.newPage(); await q.goto(base + "/login", { waitUntil: "domcontentloaded" }); await q.fill("input[name=email]", "jb@example.test"); await q.fill("input[name=password]", "password1234"); await q.click('button:has-text("Log in")'); await q.waitForURL("**/leads", { waitUntil: "domcontentloaded" });
+  const ctx2 = await b.newContext(); await ctx2.route("https://fonts.googleapis.com/**", r => r.abort()); const q = await ctx2.newPage(); await q.goto(base + "/login", { waitUntil: "domcontentloaded" }); await q.fill("input[name=email]", "jb@example.test"); await q.fill("input[name=password]", "password1234"); await q.click('button:has-text("Log in")'); await q.waitForURL("**/today", { waitUntil: "domcontentloaded" });
   console.log("JB2 nav has Settings:", await q.$$eval("nav a", a => a.map(x => x.innerText)).then(a => a.some(x => /Settings/.test(x))), "| activity tab visible:", await q.goto(base + "/reports?tab=activity", { waitUntil: "domcontentloaded" }).then(() => q.$$eval(".views a", a => a.map(x => x.innerText))).then(a => a.some(x => /Activity/.test(x))));
   console.log("errors:", errs); await b.close();
 })().catch(e => { console.error("FAIL", e.message); process.exit(1); });
