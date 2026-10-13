@@ -1,0 +1,598 @@
+<title>MRFP Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap">
+<style>
+/* Layout: navy app bar, white cards on a cool grey ground, 1360px max; lists are plain grids. Brand from Spec 9.2. */
+:root{
+  --navy:#0C3C60; --navy-deep:#082a44; --lime:#BADA55; --lime-soft:#EEF5D6;
+  --bg:#F3F6F9; --card:#FFFFFF; --fg:#0C3C60; --muted:#5B6B7A; --line:#DDE5EC; --line-strong:#C9D4DE; --chip:#E8EEF3;
+  --red:#D92D20; --red-soft:#FEF0EE; --amber:#B54708; --amber-soft:#FFF4E5; --green:#2E7D32;
+  --display:'Poppins',sans-serif; --body:'Nunito Sans','Avenir',system-ui,sans-serif;
+  --shadow:0 1px 2px rgba(12,60,96,.08);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --navy:#0C3C60; --navy-deep:#061e33; --lime:#BADA55; --lime-soft:#2d3a14; --bg:#0f1a24; --card:#172634; --fg:#E6EEF5; --muted:#9FB0BF; --line:#263849; --line-strong:#34495c; --chip:#22354a; --red:#F97066; --red-soft:#3a1d1a; --amber:#F7B267; --amber-soft:#3a2a12; --green:#7BD389; color-scheme:dark } }
+:root[data-theme="dark"]{ --navy:#0C3C60; --navy-deep:#061e33; --lime:#BADA55; --lime-soft:#2d3a14; --bg:#0f1a24; --card:#172634; --fg:#E6EEF5; --muted:#9FB0BF; --line:#263849; --line-strong:#34495c; --chip:#22354a; --red:#F97066; --red-soft:#3a1d1a; --amber:#F7B267; --amber-soft:#3a2a12; --green:#7BD389; color-scheme:dark }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
+a{color:var(--fg)}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+h1{font-size:26px;font-weight:700} h2{font-size:17px;font-weight:600} h3{font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+button,input,select,textarea{font-family:inherit;font-size:15px;color:var(--fg)}
+input,select,textarea{background:var(--card);border:1px solid var(--line-strong);border-radius:6px;padding:0 10px;height:38px;min-width:0;width:100%}
+textarea{height:auto;padding:8px 10px;resize:vertical;line-height:1.4}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--lime);outline-offset:1px}
+.btn{height:38px;padding:0 16px;border:1px solid var(--navy);background:var(--card);color:var(--fg);border-radius:6px;font-family:var(--display);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--lime);border-color:var(--lime);color:#0C3C60}
+.btn.sm{height:32px;padding:0 12px;font-size:12px}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+header.app{background:#0C3C60;padding:10px 24px;display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.logo{background:#fff;border-radius:8px;padding:4px 10px;display:flex;align-items:center}
+.logo img{height:40px;width:auto;display:block}
+nav.main{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 380px}
+nav.main a{color:#fff;text-decoration:none;padding:8px 14px;border-radius:6px;font-family:var(--display);font-weight:500;font-size:14px}
+nav.main a.on{background:#BADA55;color:#0C3C60;font-weight:600}
+nav.main .badge{background:#D92D20;color:#fff;border-radius:10px;padding:1px 7px;font-size:12px;margin-left:4px}
+.search{display:flex;align-items:center;gap:8px;background:#fff;border-radius:6px;padding:0 12px;height:38px;flex:0 1 340px;position:relative}
+.search input{border:0;height:36px;padding:0;background:transparent;color:#0C3C60}
+.search input::placeholder{color:#7a8894}
+.avatar{background:#fff;color:#0C3C60;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:600;font-size:13px;cursor:pointer;border:0}
+.results{position:absolute;top:42px;left:0;right:0;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(12,60,96,.18);z-index:9;max-height:360px;overflow:auto}
+.results a{display:block;padding:9px 12px;text-decoration:none;border-bottom:1px solid var(--line);font-size:14px}
+.results a:hover{background:var(--chip)}
+.results small{color:var(--muted);display:block}
+main{max-width:1360px;margin:0 auto;padding-block:24px;padding-inline:24px}
+@media (max-width:600px){main{padding-inline:16px} header.app{padding:10px 16px}}
+.crumb{font-size:13px;color:var(--muted);margin-bottom:10px}
+.crumb a{color:var(--muted)}
+.card{background:var(--card);border-radius:10px;padding:20px 24px;box-shadow:var(--shadow);min-width:0}
+.card h2{margin-bottom:14px}
+.cols{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.col{flex:1 1 420px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.col.wide{flex:1 1 520px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 20px}
+@media (max-width:520px){.grid2,.grid3{grid-template-columns:1fr}}
+.span2{grid-column:1/-1}
+.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--muted);min-width:0}
+.f .v{font-size:15px;font-weight:400;color:var(--fg);word-wrap:break-word;white-space:pre-line}
+.f .v.big{font-family:var(--display);font-size:30px;font-weight:700;line-height:1.1}
+.chip{display:inline-block;background:var(--chip);color:var(--fg);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:700;line-height:1.3}
+.chip.lime{background:#BADA55;color:#0C3C60}
+.chip.outline{background:transparent;border:1px solid var(--fg)}
+.chip.red{background:var(--red-soft);color:var(--red)}
+.chip.amber{background:var(--amber-soft);color:var(--amber)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.meta{font-size:13px;color:var(--muted)}
+.meta b{color:var(--fg)}
+.strip{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-start;justify-content:space-between}
+.stats{display:flex;flex-wrap:wrap;gap:12px 24px}
+.stat{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:700;color:var(--muted)}
+.stat .v{font-size:14px;font-weight:600;color:var(--fg)}
+.stat a{font-weight:600}
+.red{color:var(--red)!important}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-top:14px;overflow-x:auto}
+.tabs a{text-decoration:none;padding:10px 16px;font-family:var(--display);font-weight:500;font-size:14px;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs a.on{color:var(--fg);border-color:var(--lime);font-weight:600}
+.fu{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.fu.over{background:var(--red-soft);border-color:#F5C2BD}
+.fu .d{flex:0 0 110px;font-weight:700}
+.fu .t{flex:1;min-width:0}
+.fu .t b{display:block}
+.fu .t small{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:8px}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num,th.num{text-align:right}
+tr.over td{background:var(--red-soft)}
+tr.over td:first-child{box-shadow:inset 4px 0 0 var(--red)}
+.tw{overflow-x:auto;margin:0 -8px}
+.note{border-top:1px solid var(--line);padding-top:10px}
+.note .by{font-size:13px;color:var(--muted)}
+.note .by b{color:var(--fg)}
+.tag{display:inline-block;background:var(--chip);border-radius:6px;padding:1px 8px;font-size:12px;font-weight:700;text-decoration:none}
+.sys{opacity:.75;font-style:italic}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 14px;font-size:14px}
+.kv dt{color:var(--fg)} .kv dd{margin:0;text-align:right;font-weight:600;color:var(--fg)}
+.kv dd.na{color:var(--muted);font-weight:400}
+.dates{display:flex;flex-direction:column;gap:0}
+.dates .r{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.dates .r input{width:130px;height:30px;font-size:13px}
+.dates .r .lbl{flex:1}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.toolbar select,.toolbar input{width:auto;height:34px;font-size:14px}
+.pill{display:inline-flex;gap:6px;align-items:center;background:var(--chip);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700}
+.views{display:flex;flex-wrap:wrap;gap:6px}
+.views a{text-decoration:none;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--line-strong)}
+.views a.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.drop{border:2px dashed var(--line-strong);border-radius:8px;padding:18px;text-align:center;color:var(--muted);font-size:14px}
+.thumb{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.thumb .ph{height:130px;background:var(--chip);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;padding:8px}
+.thumb figcaption{padding:8px 10px;font-size:13px}
+.claimcard{border:2px solid var(--navy);border-radius:12px;padding:20px 24px;background:var(--card)}
+.claimrow{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;background:var(--card);border-radius:10px;padding:14px 24px;box-shadow:var(--shadow)}
+.claimrow .cid{font-weight:700;flex:0 0 140px}
+.claimrow .sp{flex:1;min-width:120px}
+.modal{position:fixed;inset:0;background:rgba(6,30,51,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal .box{background:var(--card);border-radius:12px;padding:22px 24px;max-width:560px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);max-height:90vh;overflow:auto}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:30;max-width:90vw}
+.banner{background:var(--lime-soft);border:1px solid #BADA55;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.warn{background:var(--amber-soft);border:1px solid #F4D9A6;border-radius:8px;padding:8px 12px;font-size:13px;color:var(--amber)}
+.list-link{font-weight:600;text-decoration:underline;cursor:pointer}
+.empty{color:var(--muted);padding:16px;text-align:center}
+.pre{font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:pre;overflow:auto;background:var(--chip);border-radius:6px;padding:10px;max-height:240px}
+.progress-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px;font-size:12px}
+.progress-steps span{padding:4px 6px;border-radius:4px;background:var(--chip)}
+.progress-steps span.done{background:var(--lime);color:#0C3C60;font-weight:700}
+.progress-steps span.cur{outline:2px solid var(--navy)}
+.tier{border:1px solid var(--line);border-radius:10px;padding:16px;flex:1 1 200px}
+.tier.cur{border-color:var(--lime);box-shadow:0 0 0 3px var(--lime-soft)}
+.tier .price{font-family:var(--display);font-size:26px;font-weight:700}
+@media (prefers-reduced-motion:no-preference){.toast{animation:up .2s ease-out}@keyframes up{from{opacity:0;transform:translate(-50%,8px)}}}
+</style>
+
+<header class="app">
+  <a class="logo" href="#leads" aria-label="MRFP home"><img src="__LOGO__" alt="My Refund Finder"></a>
+  <nav class="main" id="nav"></nav>
+  <label class="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B6B7A" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+    <span style="position:absolute;left:-9999px">Search</span>
+    <input type="search" id="q" placeholder="Surname, business, OTN, Claim ID, phone, email" autocomplete="off">
+    <div class="results" id="qres" hidden></div>
+  </label>
+  <button class="avatar" id="userBtn" title="Switch user">MT1</button>
+</header>
+<main id="main"></main>
+<div id="modal" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+__RULES__
+__DATA__
+</script>
+<script>
+(function(){
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let S = JSON.parse(JSON.stringify(SEED));
+try { const saved = localStorage.getItem("mrfp-proto-v1"); if (saved) S = JSON.parse(saved); } catch(e){}
+let USER = S.users[0];
+const save = () => { try { localStorage.setItem("mrfp-proto-v1", JSON.stringify(S)); } catch(e){} };
+const haById = () => Object.fromEntries(S.authorities.map(a=>[a.id,a]));
+const ocById = () => Object.fromEntries(S.companies.map(a=>[a.id,a]));
+const client = id => S.clients.find(c=>c.id===id);
+const claim = id => S.claims.find(c=>c.id===id);
+const claimsOf = cid => S.claims.filter(k=>k.clientId===cid);
+const nowTs = () => TODAY + " " + new Date().toTimeString().slice(0,5);
+let uid = 100; const newId = p => p + (++uid) + "_" + Math.random().toString(36).slice(2,6);
+function log(action, entity, ref, field="", oldValue="", newValue="") { S.activity.unshift({ ts: nowTs(), user: USER.code, action, entity, ref, field, oldValue: String(oldValue ?? ""), newValue: String(newValue ?? "") }); }
+function touch(c, k) { c.lastUpdatedBy = USER.code; c.lastUpdated = TODAY; if (k) { k.lastUpdatedBy = USER.code; k.lastUpdated = TODAY; } }
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(()=>t.hidden=true, 2600); }
+function ref(c) { return c.clientCode || R.displayName(c); }
+function openClaims(c) { return claimsOf(c.id).filter(R.isOpen); }
+function nextFollowUp(c) { return R.followUpsForClient(c, S.claims, haById(), TODAY)[0] || null; }
+function overdueCount() { return S.clients.reduce((n,c)=>n+R.followUpsForClient(c,S.claims,haById(),TODAY).filter(f=>f.due).length,0); }
+const claimRef = k => { const ha = haById()[k.authorityId]; return `${k.claimId} : ${ha?ha.name:""} : ${R.money(k.amount)}`; };
+const dateInput = (id, val, extra="") => `<input type="date" id="${id}" value="${esc(val||"")}" ${extra}>`;
+const scChips = c => (c.specialConditions||[]).map(s=>`<span class="chip lime">${esc(s)}</span>`).join("") || `<span class="meta">—</span>`;
+const stageChip = c => c.stage==="Active" ? `<span class="chip lime">Active</span>` : c.stage==="Lead" ? `<span class="chip">Lead</span>` : `<span class="chip">Inactive</span>`;
+const clink = c => `<a href="#client-${c.id}" class="list-link">${esc(R.displayName(c))}</a>`;
+const klink = k => `<a href="#client-${k.clientId}-claims-${k.id}" class="list-link">${esc(k.claimId)}</a>`;
+
+// ---------- mutations with rules ----------
+function addNote(c, text, claimId) {
+  if (!text.trim()) return;
+  c.notes.unshift({ date: TODAY, author: USER.code, text: text.trim(), claimId: claimId||null });
+  c.lastContact = TODAY; touch(c); log("Created","Note",ref(c),"Notes","",text.trim().slice(0,80)); save();
+}
+function setLeadIdentifier(c, v) {
+  const old = c.leadIdentifier; c.leadIdentifier = v || null;
+  if (v === "Info sent - waiting on response" && !c.infoEmailSent) c.infoEmailSent = TODAY;
+  if (v === "A2A sent" && !c.a2aSent) c.a2aSent = TODAY;
+  if (v === "No response - revisit in 3 months" || v === "Leads No List") { c.followUp = R.addMonths(TODAY,3); c.followUpSetBy = "Automatic"; if (!c.followUpReason) c.followUpReason = v === "Leads No List" ? "Check back - said no" : "Revisit after no response"; }
+  touch(c); log("Edited","Client",ref(c),"Lead Identifier",old,v); save();
+}
+function setA2ASigned(c, d) {
+  const old = c.a2aSigned; c.a2aSigned = d || null;
+  if (d && c.stage === "Lead") {
+    c.stage = "Active";
+    if (!c.clientCode) c.clientCode = R.clientCodeFor(c, new Set(S.clients.map(x=>x.clientCode).filter(Boolean)));
+    log("Edited","Client",ref(c),"Stage","Lead","Active"); toast(`${R.displayName(c)} is now Active - Client Code ${c.clientCode}`);
+  }
+  touch(c); log("Edited","Client",ref(c),"A2A Signed & Received",old,d); save();
+}
+function recomputeClientStage(c) {
+  const ks = claimsOf(c.id); if (!ks.length) return;
+  const allClosed = ks.every(R.isClosed);
+  if (allClosed && c.stage === "Active") {
+    c.stage = "Inactive"; c.becameNonActive = TODAY;
+    const paid = ks.some(k => [14,15,16,17].includes(k.progress) || k.paymentReceived);
+    c.inactiveReason = paid ? "Completed" : null;
+    log("Edited","Client",ref(c),"Stage","Active","Inactive"); toast(`${R.displayName(c)} is now Inactive${paid?" (Completed)":" - pick an Inactive Reason"}`);
+  } else if (!allClosed && c.stage === "Inactive") {
+    c.stage = "Active"; c.becameNonActive = null; c.inactiveReason = null; log("Edited","Client",ref(c),"Stage","Inactive","Active"); toast(`${R.displayName(c)} returned to Active`);
+  }
+}
+function setProgress(k, step) {
+  const c = client(k.clientId); const old = k.progress; step = step ? Number(step) : null; k.progress = step;
+  if (step === 2) { if (!(k.a2aLog||[]).some(e=>e.sent && !e.signed)) (k.a2aLog = k.a2aLog||[]).push({ sent: TODAY, signed: null }); }
+  if (step === 3) { const open = (k.a2aLog||[]).filter(e=>e.sent && !e.signed).pop(); if (open) open.signed = TODAY; else if (!(k.a2aLog||[]).length) (k.a2aLog=[]).push({sent:null,signed:TODAY}); }
+  if (step === 9) (k.resubmissions = k.resubmissions||[]).push(TODAY);
+  const f = R.MILESTONE_FIELD[step]; if (f && !k[f]) k[f] = TODAY;
+  if (step === 12) { k.feeManual = 0; }
+  if (R.CLOSING_STEPS.includes(step)) k.closedOn = TODAY; else k.closedOn = null;
+  touch(c,k); log("Edited","Claim",k.claimId,"Claim Progress", old?`${old} ${R.STEP_NAME[old]}`:"", step?`${step} ${R.STEP_NAME[step]}`:"");
+  recomputeClientStage(c); save();
+}
+function setInactiveByHand(c, reason, closeStep) {
+  for (const k of openClaims(c)) { const old=k.progress; k.progress = closeStep; k.closedOn = TODAY; log("Edited","Claim",k.claimId,"Claim Progress",`${old} ${R.STEP_NAME[old]}`,`${closeStep} ${R.STEP_NAME[closeStep]}`); }
+  c.stage = "Inactive"; c.inactiveReason = reason||null; c.becameNonActive = TODAY; touch(c); log("Edited","Client",ref(c),"Stage","Active","Inactive"); save();
+}
+function openClaim(c, authorityId) {
+  const ha = haById()[authorityId]; if (!ha) return null;
+  if (c.stage === "Lead") { toast("Claims cannot be opened for a Lead - enter A2A Signed & Received first."); return null; }
+  if (!ha.code) { toast(`${ha.name} has no Authority Code - MRFP cannot generate a Claim ID. Add one in Settings.`); return null; }
+  const first = !claimsOf(c.id).length;
+  const k = { id: newId("k"), claimId: R.nextClaimId(ha.code, c.clientCode, new Set(S.claims.map(x=>x.claimId))), clientId: c.id, authorityId, companyIds: [], progress: first && c.a2aSigned ? 3 : 1, amount: null, currency: "AUD", accountName: "", reference: "", year: "", addressOnRegister: c.currentAddress||"", a2aLog: first && c.a2aSent ? [{ sent: c.a2aSent, signed: c.a2aSigned||null }] : [], resubmissions: [], feePct: 20, gst: "+ GST", lastUpdatedBy: USER.code, lastUpdated: TODAY };
+  S.claims.push(k); log("Created","Claim",k.claimId,"","",`${ha.name}`);
+  if (c.stage === "Inactive") { c.stage = "Active"; c.becameNonActive = null; c.inactiveReason = null; log("Edited","Client",ref(c),"Stage","Inactive","Active"); }
+  touch(c,k); save(); return k;
+}
+function done(f) {
+  if (f.kind === "client") { const c = client(f.clientId); c.followUp = null; c.followUpReason = null; c.notes.unshift({ date: TODAY, author: USER.code, text: `Follow-up done (${f.sub||"client follow-up"})`, system: true }); touch(c); log("Edited","Client",ref(c),"Follow Up",f.date,""); }
+  else { const k = claim(f.claimId), c = client(f.clientId); k.followUp = null; k.followUpReason = null; c.notes.unshift({ date: TODAY, author: USER.code, text: `Follow-up done (${f.sub||"claim follow-up"})`, claimId: k.id, system: true }); touch(c,k); log("Edited","Claim",k.claimId,"Follow Up",f.date,""); }
+  save(); toast("Marked done by " + USER.code);
+}
+function chased(f) {
+  const k = claim(f.claimId), c = client(f.clientId), ha = haById()[k.authorityId];
+  k.lastChased = TODAY; k.lastChasedBy = USER.code;
+  c.notes.unshift({ date: TODAY, author: USER.code, text: `Chased ${ha.name} - next follow-up ${R.fmtDate(R.addDays(TODAY, ha.rechaseAfter))}`, claimId: k.id, system: true });
+  touch(c,k); log("Edited","Claim",k.claimId,"Last Chased","",TODAY); save(); toast(`Chased - next ${ha.name} follow-up in ${ha.rechaseAfter} days`);
+}
+
+// ---------- shells ----------
+const NAV = [["leads","Leads"],["clients","Clients"],["claims","Claims"],["followups","Follow-ups"],["reports","Reports"],["import","Import"],["settings","Settings"]];
+function renderNav(route) {
+  const od = overdueCount();
+  $("#nav").innerHTML = NAV.filter(([k])=>k!=="settings"||USER.role==="Admin").map(([k,l])=>`<a href="#${k}" class="${route.startsWith(k)||(k==="clients"&&route.startsWith("client-"))?"on":""}">${l}${k==="followups"&&od?`<span class="badge" aria-label="${od} due">${od}</span>`:""}</a>`).join("");
+  $("#userBtn").textContent = USER.code;
+}
+function fuRow(f, withClient) {
+  const c = client(f.clientId);
+  return `<div class="fu ${f.overdue?"over":""}"><div class="d ${f.overdue?"red":""}">${R.fmtDate(f.date,false)}${f.overdue?" · overdue":""}</div><div class="t"><b>${withClient?clink(c)+" · ":""}${f.claimId?klink(claim(f.claimId))+esc(f.label.slice(f.label.indexOf(" ·"))):esc(f.label)}</b><small>${esc(f.sub)}${f.setBy!=="Automatic"?` · set by ${esc(f.setBy)}`:""}${withClient?` · Owner ${esc(c.owner)}`:""}</small></div>${f.kind==="ha"?`<button class="btn sm" data-chased="${f.claimId}">Chased</button>`:f.kind==="a2a"?`<span class="meta">Enter Signed &amp; Received</span>`:`<button class="btn sm" data-done="${f.kind}:${f.clientId}:${f.claimId||""}">Done</button>`}</div>`;
+}
+
+// ---------- LEADS ----------
+function viewLeads(q) {
+  const filt = q.get("id")||"";
+  let leads = S.clients.filter(c=>c.stage==="Lead");
+  if (filt) leads = leads.filter(c=>(c.leadIdentifier||"")===filt);
+  const counts = {}; for (const c of S.clients.filter(c=>c.stage==="Lead")) counts[c.leadIdentifier||"(blank)"]=(counts[c.leadIdentifier||"(blank)"]||0)+1;
+  return `<div class="strip" style="margin-bottom:16px"><h1>Leads <span class="meta" style="font-size:15px;font-weight:400">${leads.length} shown</span></h1><div><a class="btn primary" href="#import" style="display:inline-flex;align-items:center;text-decoration:none">Import leads from CSV</a> <button class="btn" data-newlead>New lead</button></div></div>
+  <div class="card"><div class="toolbar"><span class="meta">Lead Identifier</span><div class="views"><a href="#leads" class="${!filt?"on":""}">All</a>${R.LEAD_IDENTIFIERS.map(i=>`<a href="#leads?id=${encodeURIComponent(i)}" class="${filt===i?"on":""}">${esc(i)}${counts[i]?` (${counts[i]})`:""}</a>`).join("")}</div></div>
+  <div class="tw"><table><thead><tr><th>Name</th><th>Identifier</th><th>Special</th><th class="num">Lead amount</th><th>Found at</th><th>Phone</th><th>Last contact</th><th>Follow up</th><th>Source</th><th>Owner</th></tr></thead><tbody>
+  ${leads.sort((a,b)=>R.displayName(a).localeCompare(R.displayName(b))).map(c=>{const nf=nextFollowUp(c);return `<tr><td>${clink(c)}${c.checklist?` <span class="chip amber" title="${esc(c.checklist)}">check-list</span>`:""}</td><td>${esc(c.leadIdentifier||"—")}</td><td>${scChips(c)}</td><td class="num">${R.money(c.leadAmount)}</td><td>${(c.searchLog[0]?.authorities||[]).join(", ")}</td><td>${esc(c.phoneMobile||c.phoneOther||"—")}</td><td>${c.lastContact?R.fmtDate(c.lastContact,false)+` · ${R.daysBetween(c.lastContact,TODAY)}d`:"—"}</td><td class="${nf&&nf.overdue?"red":""}">${nf?R.fmtDate(nf.date,false)+(nf.overdue?" · overdue":""):"—"}</td><td>${esc(c.source||"")}</td><td>${esc(c.owner)}</td></tr>`}).join("")||`<tr><td colspan="10" class="empty">No leads match.</td></tr>`}
+  </tbody></table></div></div>`;
+}
+function viewLead(c, full) {
+  const fus = R.followUpsForClient(c,S.claims,haById(),TODAY);
+  const files = S.files.filter(f=>f.clientId===c.id);
+  return `<div class="crumb"><a href="#leads">Leads</a> › ${esc(c.leadIdentifier||"No identifier")}</div>
+  ${c.checklist?`<div class="warn" style="margin-bottom:14px">Migration check-list: ${esc(c.checklist)}</div>`:""}
+  <section class="card strip">
+    <div style="flex:1 1 360px"><h1>${esc(R.displayName(c))}</h1><div class="chips" style="margin-top:8px">${stageChip(c)}${scChips(c).replace('<span class="meta">—</span>','')}<span class="meta">${esc(c.clientType)} · Owner <b>${esc(c.owner)}</b> · Last updated by <b>${esc(c.lastUpdatedBy)}</b>, ${R.fmtDate(c.lastUpdated)}</span></div></div>
+    <label class="f" style="text-transform:uppercase;letter-spacing:.6px;font-size:12px">Lead Identifier<select id="leadId" style="min-width:250px;text-transform:none;letter-spacing:0"><option value="">(none)</option>${R.LEAD_IDENTIFIERS.map(i=>`<option ${c.leadIdentifier===i?"selected":""}>${esc(i)}</option>`).join("")}</select></label>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn" href="#client-${c.id}-profile" style="display:inline-flex;align-items:center;text-decoration:none">Show full record</a><button class="btn primary" data-focus="noteBox">Log a call note</button><button class="btn danger" data-inactive="${c.id}">Set Inactive</button></div>
+  </section>
+  <div class="cols" style="margin-top:20px">
+    <div class="col">
+      <section class="card"><h2>Contact</h2><div class="grid2">
+        <label class="f">Phone - Mobile<input data-field="phoneMobile" value="${esc(c.phoneMobile)}"></label>
+        <label class="f">Phone - Other<input data-field="phoneOther" value="${esc(c.phoneOther)}"></label>
+        <label class="f span2">Email<textarea rows="2" data-field="email" placeholder="One per line">${esc(c.email)}</textarea></label>
+        <label class="f">Source<select data-field="source">${R.SOURCES.map(s=>`<option ${c.source===s?"selected":""}>${s}</option>`).join("")}</select></label>
+        <div class="f">Special Condition<div class="chips">${R.SPECIAL_CONDITIONS.map(s=>`<label class="chip ${c.specialConditions.includes(s)?"lime":""}" style="cursor:pointer"><input type="checkbox" data-sc="${s}" ${c.specialConditions.includes(s)?"checked":""} style="width:auto;height:auto;margin:0 4px 0 0">${s}</label>`).join("")}</div></div>
+      </div></section>
+      <section class="card"><h2>What we found</h2>
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span class="v big" style="font-family:var(--display);font-size:30px;font-weight:700">${R.money(c.leadAmount)}</span><span class="meta">Lead Amount (estimate)</span></div>
+        <div class="chips" style="margin-top:10px">${(c.searchLog[0]?.authorities||[]).map(a=>`<span class="chip outline">${esc(a)}</span>`).join("")||'<span class="meta">No search log yet</span>'}</div>
+        <div class="f" style="margin-top:14px">Address on UCM<input data-field="addressOnUCM" value="${esc(c.addressOnUCM)}"></div>
+      </section>
+      <section class="card"><h2>Follow up</h2><div class="grid2">
+        <label class="f">Follow Up${dateInput("fu",c.followUp,'data-field="followUp"')}</label>
+        <label class="f">Reason<input data-field="followUpReason" value="${esc(c.followUpReason)}" list="reasons"></label>
+        <div class="f">Last Contact<span class="v">${c.lastContact?`${R.fmtDate(c.lastContact)} · ${R.daysBetween(c.lastContact,TODAY)} days ago`:"—"}</span></div>
+        <label class="f">Info Email Sent${dateInput("ie",c.infoEmailSent,'data-field="infoEmailSent"')}</label>
+        <label class="f">A2A Sent${dateInput("a2as",c.a2aSent,'data-field="a2aSent"')}</label>
+        <label class="f">A2A Signed &amp; Received${dateInput("a2ar",c.a2aSigned,'data-a2asigned')}</label>
+      </div>${fus.length?`<div class="stack" style="margin-top:14px">${fus.map(f=>fuRow(f,false)).join("")}</div>`:""}</section>
+    </div>
+    <div class="col wide">
+      <section class="card"><div class="strip" style="margin-bottom:14px"><h2 style="margin:0">Attachments</h2><button class="btn sm" data-addfile="${c.id}">Add file</button></div>
+        ${files.length?`<div class="grid2">${files.map(f=>`<figure class="thumb" style="margin:0"><div class="ph">[${esc(f.name)} preview - click to open full size]</div><figcaption>${esc(f.name)}<br><span class="meta">${esc(f.by)} · ${R.fmtDate(f.date)}</span></figcaption></figure>`).join("")}</div>`:""}
+        <div class="drop" style="margin-top:14px" data-addfile="${c.id}">Drop register or Acceleon screenshots here</div></section>
+      ${notesCard(c)}
+    </div>
+  </div><datalist id="reasons"><option>Follow up on initial email</option><option>Follow up on A2A</option><option>Follow up on ID &amp; Address Evidence</option></datalist>`;
+}
+function notesCard(c, claimFilter) {
+  const notes = c.notes.filter(n=>!claimFilter||n.claimId===claimFilter);
+  return `<section class="card"><h2>${claimFilter?"Notes for this claim":"Notes"}</h2><textarea rows="3" id="noteBox" data-note="${c.id}" data-claim="${claimFilter||""}" placeholder="${claimFilter?"Type a note for this claim…":"Type a call note… (Enter to save, Shift+Enter for a new line)"}"></textarea><div class="meta" style="margin-top:6px">Saving a note updates Last Contact. Press Enter to save.</div>
+  <div class="stack" style="margin-top:14px">${notes.map(n=>{const k=n.claimId?claim(n.claimId):null;return `<div class="note ${n.system?"sys":""}"><div class="by"><b>${esc(n.author)}</b> · ${R.fmtDate(n.date)}${k?` · <a class="tag" href="#client-${c.id}-claims-${k.id}">${esc(claimRef(k))} ›</a>`:""}</div><div style="margin-top:4px">${esc(n.text)}</div></div>`}).join("")||'<div class="empty">No notes yet.</div>'}</div></section>`;
+}
+
+// ---------- CLIENTS ----------
+function viewClients(q) {
+  const view = q.get("view")||"all"; const stage=q.get("stage")||"", src=q.get("source")||"", sc=q.get("sc")||"", owner=q.get("owner")||"", ident=q.get("ident")||"";
+  let rows = S.clients.slice();
+  if (view==="active") rows = rows.filter(c=>c.stage==="Active");
+  if (stage) rows = rows.filter(c=>c.stage===stage);
+  if (src) rows = rows.filter(c=>c.source===src);
+  if (sc) rows = rows.filter(c=>c.specialConditions.includes(sc));
+  if (owner) rows = rows.filter(c=>c.owner===owner);
+  if (ident) rows = rows.filter(c=>(c.leadIdentifier===ident)||(c.inactiveReason===ident));
+  rows.sort((a,b)=>R.displayName(a).localeCompare(R.displayName(b)));
+  const all=S.clients, n=s=>all.filter(c=>c.stage===s).length;
+  const mk=(k,v)=>{const p=new URLSearchParams(q);v?p.set(k,v):p.delete(k);return "#clients?"+p.toString()};
+  const sel=(k,opts,cur,label)=>`<label class="f" style="font-size:12px">${label}<select data-nav="${k}" style="min-width:140px">
+    <option value="">Any</option>${opts.map(o=>`<option value="${esc(o)}" ${cur===o?"selected":""}>${esc(o)}</option>`).join("")}</select></label>`;
+  window._clientNav = mk;
+  const csv = ["Client name,Client Code,Stage,Lead Identifier / Inactive Reason,Source,Special Condition,Open claims,Last Contact,Next follow-up,Date entered,Owner",...rows.map(c=>{const nf=nextFollowUp(c);return [R.displayName(c),c.clientCode||"",c.stage,c.leadIdentifier||c.inactiveReason||"",c.source||"",c.specialConditions.join("; "),openClaims(c).length,c.lastContact||"",nf?nf.date:"",c.dateEntered||"",c.owner].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")})].join("\n");
+  return `<div class="strip" style="margin-bottom:16px"><h1>Clients</h1><div class="stats"><div class="stat">Clients<span class="v">${all.length}</span></div><div class="stat">Leads<span class="v">${n("Lead")}</span></div><div class="stat">Active<span class="v">${n("Active")}</span></div><div class="stat">Inactive<span class="v">${n("Inactive")}</span></div></div></div>
+  <div class="card"><div class="toolbar"><div class="views"><a href="${mk("view","")}" class="${view!=="active"?"on":""}">All clients</a><a href="${mk("view","active")}" class="${view==="active"?"on":""}">Active clients</a></div>
+    ${sel("stage",["Lead","Active","Inactive"],stage,"Stage")}${sel("ident",[...R.LEAD_IDENTIFIERS,...R.INACTIVE_REASONS],ident,"Identifier / Reason")}${sel("source",R.SOURCES,src,"Source")}${sel("sc",R.SPECIAL_CONDITIONS,sc,"Special Condition")}${sel("owner",S.users.map(u=>u.code),owner,"Owner")}
+    <button class="btn sm" data-copy="${esc(csv)}">Export CSV (copy)</button><span class="meta">${rows.length} rows</span></div>
+  <div class="tw"><table><thead><tr><th>Client name</th><th>Code</th><th>Stage</th><th>Identifier / Reason</th><th>Source</th><th>Special</th><th class="num">Open claims</th><th>Last contact</th><th>Next follow-up</th><th>Date entered</th><th>Owner</th></tr></thead><tbody>
+  ${rows.map(c=>{const nf=nextFollowUp(c);return `<tr><td>${clink(c)}${c.checklist?` <span class="chip amber" title="${esc(c.checklist)}">check-list</span>`:""}</td><td>${esc(c.clientCode||"—")}</td><td>${stageChip(c)}</td><td>${esc(c.leadIdentifier||c.inactiveReason||"—")}</td><td>${esc(c.source||"—")}</td><td>${scChips(c)}</td><td class="num">${openClaims(c).length}</td><td>${c.lastContact?R.fmtDate(c.lastContact,false):"—"}</td><td class="${nf&&nf.overdue?"red":""}">${nf?R.fmtDate(nf.date,false)+(nf.overdue?" · overdue":""):"—"}</td><td>${R.fmtDate(c.dateEntered,false)}</td><td>${esc(c.owner)}</td></tr>`}).join("")}
+  </tbody></table></div></div>`;
+}
+function viewClient(c, tab, focusClaim) {
+  if (c.stage==="Lead" && tab==="lead") return viewLead(c);
+  const ks = claimsOf(c.id), open = ks.filter(R.isOpen), fus = R.followUpsForClient(c,S.claims,haById(),TODAY), nf = fus[0];
+  const tabs = [["summary","Summary"],["profile",c.clientType==="Business"?"Profile - Business":"Profile - Personal"],["claims",`Claims (${ks.length})`],["documents","Documents"]];
+  let body = "";
+  if (tab==="summary") body = `<div class="cols"><div class="col wide">
+    <section class="card" id="followups"><h2>Upcoming follow-ups</h2><div class="stack">${fus.map(f=>fuRow(f,false)).join("")||'<div class="empty">Nothing scheduled.</div>'}</div></section>
+    <section class="card"><h2>Active claims</h2><div class="tw"><table><thead><tr><th>Claim ID</th><th>Holding Authority</th><th>Claim Progress</th><th class="num">Amount</th></tr></thead><tbody>${open.map(k=>{const ha=haById()[k.authorityId];const ocs=k.companyIds.map(i=>ocById()[i]?.name).filter(Boolean);return `<tr><td>${klink(k)}</td><td>${esc(ha?.name)}${ocs.length?" · "+esc(ocs.join(", ")):""}</td><td>${k.progress?`${k.progress} · ${esc(R.STEP_NAME[k.progress])}`:'<span class="chip amber">blank - check-list</span>'}</td><td class="num">${R.money(k.amount,k.currency)}</td></tr>`}).join("")||`<tr><td colspan="4" class="empty">No open claims.</td></tr>`}</tbody></table></div></section>
+    ${notesCard(c)}</div>
+    <div class="col"><section class="card"><h2>Contact</h2><div class="grid2"><div class="f">Mobile<span class="v">${esc(c.phoneMobile||"—")}</span></div><div class="f">Other<span class="v">${esc(c.phoneOther||"—")}</span></div><div class="f span2">Email<span class="v">${esc(c.email||"—")}</span></div><div class="f span2">Current address<span class="v">${esc(c.currentAddress||"—")}</span></div>${c.clientType==="Business"?`<div class="f span2">Business contact<span class="v">${esc(c.businessContact||"—")}</span></div>`:""}</div></section>
+    <section class="card"><h2>ID received</h2><dl class="kv">${[["Licence","idLicence"],["Passport","idPassport"],["Medicare","idMedicare"],["Other","idOther"]].map(([l,k])=>`<dt>${l}</dt><dd class="${c[k]?"":"na"}">${c[k]?R.fmtDate(c[k]):"Not yet"}</dd>`).join("")}</dl><div class="grid2" style="margin-top:12px">${[["Licence","idLicence"],["Passport","idPassport"],["Medicare","idMedicare"],["Other","idOther"]].map(([l,k])=>`<label class="f">${l} received${dateInput("id_"+k,c[k],`data-field="${k}"`)}</label>`).join("")}</div></section>
+    <section class="card"><h2>A2A &amp; related</h2><div class="grid2"><div class="f">A2A Sent<span class="v">${c.a2aSent?R.fmtDate(c.a2aSent):"—"}</span></div><div class="f">A2A Signed<span class="v">${c.a2aSigned?R.fmtDate(c.a2aSigned):"—"}</span></div><div class="f span2">Related clients<span class="v">${(c.relatedIds||[]).map(i=>client(i)).filter(Boolean).map(r=>clink(r)).join(", ")||"—"}</span></div>${c.stage==="Inactive"?`<div class="f">Became Non-Active<span class="v">${c.becameNonActive?R.fmtDate(c.becameNonActive):"—"}</span></div><label class="f">Inactive Reason<select data-field="inactiveReason"><option value="">(blank)</option>${R.INACTIVE_REASONS.map(r=>`<option ${c.inactiveReason===r?"selected":""}>${r}</option>`).join("")}</select></label>`:""}</div></section></div></div>`;
+  else if (tab==="profile") body = viewProfile(c);
+  else if (tab==="claims") body = viewClaims(c, ks, focusClaim);
+  else body = `<section class="card"><div class="strip" style="margin-bottom:14px"><h2 style="margin:0">Documents</h2><button class="btn sm" data-addfile="${c.id}">Add file</button></div><div class="tw"><table><thead><tr><th>File</th><th>Type</th><th>Added by</th><th>Date</th></tr></thead><tbody>${S.files.filter(f=>f.clientId===c.id).map(f=>`<tr><td><span class="list-link">${esc(f.name)}</span></td><td>${esc(f.kind)}</td><td>${esc(f.by)}</td><td>${R.fmtDate(f.date)}</td></tr>`).join("")||'<tr><td colspan="4" class="empty">No files yet.</td></tr>'}</tbody></table></div><div class="drop" style="margin-top:14px" data-addfile="${c.id}">Drop files here - they are copied into MRFP storage and linked to this client</div></section>`;
+  return `${c.checklist?`<div class="warn" style="margin-bottom:14px">Migration check-list: ${esc(c.checklist)}</div>`:""}
+  <section class="card" style="padding-bottom:0"><div class="strip"><div><h1>${esc(R.displayName(c))} <span class="meta" style="font-family:var(--display);font-weight:500">${esc(c.clientCode||"")}</span></h1><div class="chips" style="margin-top:8px">${stageChip(c)}${scChips(c).replace('<span class="meta">—</span>','')}${c.stage==="Inactive"&&c.inactiveReason?`<span class="chip">${esc(c.inactiveReason)}</span>`:""}</div></div>
+    <div class="stats"><div class="stat">Owner<span class="v">${esc(c.owner)}${USER.role==="Admin"?` <select data-field="owner" style="width:auto;height:26px;font-size:12px;padding:0 4px">${S.users.map(u=>`<option ${c.owner===u.code?"selected":""}>${u.code}</option>`).join("")}</select>`:""}</span></div><div class="stat">Last contact<span class="v"><a href="#client-${c.id}-summary-notes">${c.lastContact?`${R.fmtDate(c.lastContact,false)} · ${R.daysBetween(c.lastContact,TODAY)} days`:"—"}</a></span></div><div class="stat">Next follow-up<span class="v"><a href="#client-${c.id}-summary-followups" class="${nf&&nf.overdue?"red":""}">${nf?R.fmtDate(nf.date,false)+(nf.overdue?" · overdue":""):"—"}</a></span></div><div class="stat">Open claims<span class="v"><a href="#client-${c.id}-claims">${open.length}</a></span></div><div class="stat">Last updated<span class="v">${esc(c.lastUpdatedBy)}, ${R.fmtDate(c.lastUpdated)}</span></div>
+    ${c.stage==="Active"?`<button class="btn sm danger" data-inactive="${c.id}">Set Inactive</button>`:""}</div></div>
+    <div class="tabs">${tabs.map(([k,l])=>`<a href="#client-${c.id}-${k}" class="${tab===k?"on":""}">${l}</a>`).join("")}${c.stage==="Lead"?`<a href="#client-${c.id}-lead">Lead screen</a>`:""}</div></section>
+  <div style="margin-top:20px">${body}</div>`;
+}
+function viewProfile(c) {
+  const biz = c.clientType==="Business";
+  const inp=(l,k,t="text")=>`<label class="f">${l}<input type="${t}" data-field="${k}" value="${esc(c[k])}"></label>`;
+  return `<div class="cols"><div class="col"><section class="card"><h2>${biz?"Business":"Personal"} details</h2><div class="grid2">
+    <label class="f">Client Type<select data-field="clientType"><option ${!biz?"selected":""}>Individual</option><option ${biz?"selected":""}>Business</option></select></label><div class="f">Client Code<span class="v">${esc(c.clientCode||"— (generated when Active)")}</span></div>
+    ${biz?`<label class="f span2">Business Names (first is the main name)<textarea rows="2" data-list="businessNames">${esc((c.businessNames||[]).join("\n"))}</textarea></label>${inp("ABN","abn")}${inp("ACN","acn")}${inp("Website","website")}<label class="f span2">Business Contact<input data-field="businessContact" value="${esc(c.businessContact)}"></label>`
+    :`${inp("Surname","surname")}${inp("First Name","firstName")}${inp("Middle Name","middleName")}${inp("Preferred Name","preferredName")}<label class="f span2">Other names known by<input data-field="otherNames" value="${esc(c.otherNames)}"></label>${inp("DOB","dob","date")}<label class="f">Executor/Administrator Details<input data-field="businessContact" value="${esc(c.businessContact)}"></label>`}
+    <label class="f span2">Email (one per line)<textarea rows="2" data-field="email">${esc(c.email)}</textarea></label>${inp("Phone - Mobile","phoneMobile")}${inp("Phone - Other","phoneOther")}
+    <label class="f span2">Current Address<input data-field="currentAddress" value="${esc(c.currentAddress)}"></label><label class="f">Current PO Box<input data-field="currentPOBox" value="${esc(c.currentPOBox)}"></label><label class="f">Address on UCM<input data-field="addressOnUCM" value="${esc(c.addressOnUCM)}"></label>
+    <label class="f span2">Previous Addresses (one per line)<textarea rows="3" data-list="previousAddresses">${esc((c.previousAddresses||[]).join("\n"))}</textarea></label>
+  </div></section></div>
+  <div class="col"><section class="card"><h2>Status &amp; source</h2><div class="grid2">
+    <div class="f">Stage<span class="v">${esc(c.stage)}</span></div><label class="f">Source<select data-field="source">${R.SOURCES.map(s=>`<option ${c.source===s?"selected":""}>${s}</option>`).join("")}</select></label>
+    <div class="f">Lead Identifier (history)<span class="v">${esc(c.leadIdentifier||"—")}</span></div><label class="f">Date entered<input type="date" data-field="dateEntered" value="${esc(c.dateEntered)}"></label>
+    <div class="f span2">Special Condition<div class="chips">${R.SPECIAL_CONDITIONS.map(s=>`<label class="chip ${c.specialConditions.includes(s)?"lime":""}" style="cursor:pointer"><input type="checkbox" data-sc="${s}" ${c.specialConditions.includes(s)?"checked":""} style="width:auto;height:auto;margin:0 4px 0 0">${s}</label>`).join("")}</div></div>
+    <label class="f">Lead Amount (estimate)<input data-field="leadAmount" data-money value="${c.leadAmount!=null?c.leadAmount.toFixed(2):""}"></label><div class="f">Info Email Sent<span class="v">${c.infoEmailSent?R.fmtDate(c.infoEmailSent):"—"}</span></div>
+    <label class="f span2">Related Client Records<select multiple size="4" data-multi="relatedIds" style="height:auto">${S.clients.filter(x=>x.id!==c.id).map(x=>`<option value="${x.id}" ${(c.relatedIds||[]).includes(x.id)?"selected":""}>${esc(R.displayName(x))}</option>`).join("")}</select></label>
+  </div></section>
+  <section class="card"><h2>Search log</h2><div class="tw"><table><thead><tr><th>Date searched</th><th>Holding Authorities found at</th></tr></thead><tbody>${c.searchLog.map(s=>`<tr><td>${R.fmtDate(s.date)}</td><td>${esc(s.authorities.join(", "))}</td></tr>`).join("")||'<tr><td colspan="2" class="empty">No searches logged.</td></tr>'}</tbody></table></div><button class="btn sm" style="margin-top:10px" data-addsearch="${c.id}">Add search</button></section></div></div>`;
+}
+function viewClaims(c, ks, focusId) {
+  const open = ks.filter(R.isOpen), closed = ks.filter(R.isClosed);
+  const focus = (focusId && ks.find(k=>k.id===focusId)) || ks[0];
+  const canOpen = c.stage !== "Lead";
+  return `<div class="strip" style="margin-bottom:16px"><div class="chips"><span class="pill">${open.length} open</span><span class="meta">${closed.length} closed${ks.length-open.length-closed.length?` · ${ks.length-open.length-closed.length} no status`:""}</span></div><div style="display:flex;gap:8px;align-items:center"><select id="newClaimHA" style="width:auto;height:38px"><option value="">Holding Authority…</option>${S.authorities.map(a=>`<option value="${a.id}">${esc(a.name)}${a.code?"":" (no code)"}</option>`).join("")}</select><button class="btn primary" data-openclaim="${c.id}" ${canOpen?"":"disabled title='Claims cannot be opened for a Lead'"}>Open new claim</button></div></div>
+  ${focus?claimCard(c,focus):'<div class="card empty">No claims yet.</div>'}
+  <div class="stack" style="margin-top:16px">${ks.filter(k=>k!==focus).map(k=>{const ha=haById()[k.authorityId];const f=R.followUpsForClient(c,[k],haById(),TODAY)[0];return `<div class="claimrow"><span class="cid">${klink(k)}</span><span>${esc(ha?.name)}</span><span class="sp">${k.progress?`${k.progress} · ${esc(R.STEP_NAME[k.progress])}`:'<span class="chip amber">no status</span>'}</span><span>${R.money(k.amount,k.currency)}</span><span class="meta ${f&&f.overdue?"red":""}">${f?`${f.kind==="ha"?"Next follow-up":"Follow-up"} ${R.fmtDate(f.date,false)}${f.overdue?" · overdue":""}`:""}</span><a class="btn sm" href="#client-${c.id}-claims-${k.id}" style="display:inline-flex;align-items:center;text-decoration:none">Open</a></div>`}).join("")}</div>`;
+}
+function claimCard(c, k) {
+  const ha = haById()[k.authorityId]; const ocs = k.companyIds.map(i=>ocById()[i]).filter(Boolean);
+  const fee = R.feeAUD(k), g = R.gstBreakdown(fee, k.gst); const nxt = R.nextHAFollowUp(k, ha);
+  const latest = [k.dateSubmitted,...(k.resubmissions||[])].filter(Boolean).sort().pop();
+  const d=(l,f)=>`<div class="r"><span class="lbl">${l}</span>${dateInput("cd_"+f,k[f],`data-cfield="${f}"`)}</div>`;
+  const joint = (k.jointWith||[]).map(i=>client(i)).filter(Boolean);
+  const idLine = x => [["Licence","idLicence"],["Medicare","idMedicare"],["Passport","idPassport"],["Other","idOther"]].map(([l,f])=>x[f]?`${l} ${R.fmtDate(x[f],false)}`:`${l} not yet`).join(" · ");
+  return `<div class="claimcard" data-claimcard="${k.id}">${k.checklist?`<div class="warn" style="margin-bottom:12px">Migration check-list: ${esc(k.checklist)}</div>`:""}
+  <div class="strip"><div><h2 style="font-size:22px;margin:0">${esc(k.claimId)} <span class="meta" style="font-family:var(--body)">${esc(ha?.name)}${ocs.length?" · "+esc(ocs.map(o=>o.name).join(", ")):""}</span></h2><div class="meta" style="margin-top:4px">${joint.length?`Joint with ${joint.map(j=>clink(j)).join(", ")} · `:""}Last updated by <b>${esc(k.lastUpdatedBy)}</b>, ${R.fmtDate(k.lastUpdated)}${k.migratedNo?` · Airtable claim no. ${k.migratedNo}`:""}</div></div>
+    <label class="f" style="text-transform:uppercase;letter-spacing:.6px;font-size:12px;min-width:300px">Claim Progress<select data-progress="${k.id}" style="text-transform:none;letter-spacing:0"><option value="">(blank)</option>${R.STEPS.map(([n,l])=>`<option value="${n}" ${k.progress===n?"selected":""}>${n} · ${esc(l)}</option>`).join("")}</select></label></div>
+  <div class="progress-steps" style="margin:14px 0 18px">${R.STEPS.map(([n,l])=>`<span class="${k.progress&&n<k.progress&&!R.CLOSING_STEPS.includes(n)?"done":""} ${k.progress===n?"cur done":""}" title="${esc(l)}">${n} ${esc(l.length>24?l.slice(0,22)+"…":l)}</span>`).join("")}</div>
+  <div class="grid3" style="gap:20px 28px">
+    <div><h3 style="margin-bottom:10px">Claim details</h3><div class="grid2">
+      <label class="f">Amount<input data-cfield="amount" data-money value="${k.amount!=null?k.amount.toFixed(2):""}"></label><label class="f">Currency<select data-cfield="currency"><option ${k.currency==="AUD"?"selected":""}>AUD</option><option ${k.currency==="NZD"?"selected":""}>NZD</option></select></label>
+      <label class="f span2">Account Name on Register<input data-cfield="accountName" value="${esc(k.accountName)}"></label>
+      <label class="f">Reference Number (OTN)<input data-cfield="reference" value="${esc(k.reference)}"></label><label class="f">Year<input data-cfield="year" value="${esc(k.year)}"></label>
+      <label class="f span2">Address on Register<input data-cfield="addressOnRegister" value="${esc(k.addressOnRegister)}" list="addr_${k.id}"><datalist id="addr_${k.id}">${[c.currentAddress,...(c.previousAddresses||[])].filter(Boolean).map(a=>`<option value="${esc(a)}">`).join("")}</datalist></label>
+      <label class="f span2">Originating Company<select multiple data-cmulti="companyIds" style="height:auto" size="3">${S.companies.map(o=>`<option value="${o.id}" ${k.companyIds.includes(o.id)?"selected":""}>${esc(o.name)}</option>`).join("")}</select></label>
+    </div>
+    <h3 style="margin:16px 0 10px">Fee</h3><div class="grid3">
+      <label class="f">Fee for Service %<input data-cfield="feePct" data-num list="fees" value="${k.feePct??""}"><datalist id="fees">${R.FEE_OPTIONS.map(f=>`<option value="${f}">`).join("")}</datalist></label>
+      <div class="f">Fee (AUD)${k.currency==="NZD"&&k.progress!==12?`<input data-cfield="feeManual" data-money value="${k.feeManual!=null?k.feeManual.toFixed(2):""}" placeholder="Type AUD fee">`:`<span class="v">${R.money(fee)}</span>`}</div>
+      <label class="f">GST Treatment<select data-cfield="gst"><option ${k.gst==="+ GST"?"selected":""}>+ GST</option><option ${k.gst==="Inclusive of GST"?"selected":""}>Inclusive of GST</option></select></label>
+      <div class="f">Fee ex GST<span class="v">${R.money(g.exGst)}</span></div><div class="f">GST<span class="v">${R.money(g.gst)}</span></div><div class="f">Total Invoiced<span class="v" style="font-weight:700">${R.money(g.total)}</span></div>
+    </div>${k.currency==="NZD"?'<div class="meta" style="margin-top:6px">NZD claim: fee is typed in AUD at the rate on the day the A2A was written.</div>':""}
+    <h3 style="margin:16px 0 8px">ID status (from Client)</h3><div style="font-size:14px"><b>${esc(c.firstName||R.displayName(c))}:</b> ${idLine(c)}${joint.map(j=>`<br><b>${esc(j.firstName)} (joint):</b> ${idLine(j)}`).join("")}</div></div>
+    <div><h3 style="margin-bottom:10px">Dates</h3><div class="dates">
+      <div class="r"><span class="lbl">Authority to Act</span><button class="btn sm" data-adda2a="${k.id}">+ Add A2A</button></div>
+      ${(k.a2aLog||[]).map((e,i)=>`<div class="r" style="padding-left:12px"><span class="lbl meta">${i+1} · Sent ${e.sent?R.fmtDate(e.sent):"—"}${e.reason?` (${esc(e.reason)})`:""}</span><span>${e.signed?`<b>Signed ${R.fmtDate(e.signed)}</b>`:`<input type="date" data-a2asign="${k.id}:${i}" style="width:140px;height:30px;font-size:13px" title="Signed & Received">`}</span></div>`).join("")||'<div class="r meta" style="padding-left:12px">None yet</div>'}
+      ${d("Address Verification Received","addressVerification")}${d("HA Forms Sent for Signature","haFormSent")}${d("HA Forms Signed &amp; Received","haFormSigned")}${d("Date Submitted","dateSubmitted")}
+      <div class="r"><span class="lbl">Date Resubmitted</span><button class="btn sm" data-addresub="${k.id}">+ Add resubmission</button></div>${(k.resubmissions||[]).map(r=>`<div class="r meta" style="padding-left:12px">${R.fmtDate(r)}</div>`).join("")||'<div class="r meta" style="padding-left:12px">None yet</div>'}
+      ${d("Claim Approved","claimApproved")}${d("Refund Received","refundReceived")}${d("Invoice Sent","invoiceSent")}${d("MRF Payment Received","paymentReceived")}${d("Review Requested","reviewRequested")}${d("Review Completed","reviewCompleted")}
+      ${k.closedOn?`<div class="r"><span class="lbl">Closed (from Activity Log)</span><b>${R.fmtDate(k.closedOn)}</b></div>`:""}
+    </div></div>
+    <div><section style="background:var(--bg);border-radius:10px;padding:16px"><h2 style="font-size:15px">Follow-ups</h2>
+      ${ha&&ha.chaseAfter?`<div style="font-size:14px"><b>Next ${esc(ha.name)} follow-up:</b> ${nxt?`<span class="${nxt<TODAY?"red":""}">${R.fmtDate(nxt)}${nxt<TODAY?" · overdue":""}</span>`:"—"}<div class="meta">${latest?`Submitted ${R.fmtDate(latest)} + ${ha.chaseAfter} days`:"Not submitted yet"} · last chased ${k.lastChased?`${R.fmtDate(k.lastChased)} by ${esc(k.lastChasedBy||"MT1")}`:"—"}</div>${nxt?`<button class="btn sm" style="margin-top:8px" data-chased="${k.id}">Chased</button>`:""}</div>`:`<div class="meta">${esc(ha?.name)} has no follow-up rule.</div>`}
+      <div class="grid2" style="margin-top:12px"><label class="f">Claim Follow Up${dateInput("kfu",k.followUp,`data-cfield="followUp"`)}</label><label class="f">Reason<input data-cfield="followUpReason" value="${esc(k.followUpReason)}" list="reasons"></label></div></section>
+      <h3 style="margin:16px 0 8px">Holding Authority screenshot</h3><div class="thumb"><div class="ph">[${esc(ha?.name)} register screenshot - click to enlarge]</div></div>
+      <div style="margin-top:16px">${notesCard(c,k.id).replace('class="card"','class="card" style="padding:0;box-shadow:none;background:transparent"')}</div></div>
+  </div></div>`;
+}
+
+// ---------- CLAIM REPORT VIEWS ----------
+const CLAIM_VIEWS = [["all","All claims",()=>true],["notstarted","Not Started",k=>k.progress===1],["pipeline","Pipeline - All",k=>k.progress>=1&&k.progress<=13],["viable","Pipeline - Viable",k=>k.progress>=2&&k.progress<=13],["sent","Sent to Holding Authority",k=>k.progress===7],["approved","Approved - Waiting on Refund",k=>k.progress===10],["waiting","MRF Waiting on Payment",k=>k.progress===13],["paid","MRF Invoice Paid",k=>k.progress===14],["review","Review Not Completed",k=>k.progress===15]];
+function viewClaimReports(q) {
+  const v = q.get("view")||"all", haF=q.get("ha")||"", ownerF=q.get("owner")||"";
+  const def = CLAIM_VIEWS.find(x=>x[0]===v)||CLAIM_VIEWS[0];
+  let rows = S.claims.filter(def[2]);
+  if (haF) rows = rows.filter(k=>k.authorityId===haF);
+  if (ownerF) rows = rows.filter(k=>client(k.clientId).owner===ownerF);
+  const mk=(k,val)=>{const p=new URLSearchParams(q);val?p.set(k,val):p.delete(k);return "#claims?"+p.toString()};
+  const totFee = rows.reduce((s,k)=>s+(R.feeAUD(k)||0),0);
+  const csv=["Claim ID,Client,Holding Authority,Originating Company,Claim Progress,Amount,Currency,Fee (AUD),A2A Sent,A2A Signed,Date Submitted,Claim Approved,Refund Received,Invoice Sent,Payment Received,Closed",...rows.map(k=>{const c=client(k.clientId),ha=haById()[k.authorityId];return [k.claimId,R.displayName(c),ha?.name||"",k.companyIds.map(i=>ocById()[i]?.name).join("; "),k.progress?`${k.progress} ${R.STEP_NAME[k.progress]}`:"",k.amount??"",k.currency,R.feeAUD(k)??"",k.a2aLog?.[0]?.sent||"",k.a2aLog?.[0]?.signed||"",k.dateSubmitted||"",k.claimApproved||"",k.refundReceived||"",k.invoiceSent||"",k.paymentReceived||"",k.closedOn||""].map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")})].join("\n");
+  return `<h1 style="margin-bottom:16px">Claims</h1><div class="card"><div class="views" style="margin-bottom:12px">${CLAIM_VIEWS.map(([k,l,f])=>`<a href="${mk("view",k)}" class="${v===k?"on":""}">${l} (${S.claims.filter(f).length})</a>`).join("")}</div>
+  <div class="toolbar"><label class="f" style="font-size:12px">Holding Authority<select data-nav="ha" style="min-width:150px"><option value="">Any</option>${S.authorities.map(a=>`<option value="${a.id}" ${haF===a.id?"selected":""}>${esc(a.name)}</option>`).join("")}</select></label><label class="f" style="font-size:12px">Owner<select data-nav="owner"><option value="">Any</option>${S.users.map(u=>`<option ${ownerF===u.code?"selected":""}>${u.code}</option>`).join("")}</select></label><button class="btn sm" data-copy="${esc(csv)}">Export CSV (copy)</button><span class="meta">${rows.length} claims · fees ${R.money(totFee)} AUD</span></div>
+  <div class="tw"><table><thead><tr><th>Claim ID</th><th>Client</th><th>Holding Authority</th><th>Originating Company</th><th>Claim Progress</th><th class="num">Amount</th><th class="num">Fee (AUD)</th><th>A2A sent</th><th>Submitted</th><th>Approved</th><th>Refund</th><th>Closed</th></tr></thead><tbody>
+  ${rows.map(k=>{const c=client(k.clientId),ha=haById()[k.authorityId];return `<tr><td>${klink(k)}</td><td>${clink(c)}</td><td>${esc(ha?.name)}</td><td>${esc(k.companyIds.map(i=>ocById()[i]?.name).join(", "))||"—"}</td><td>${k.progress?`${k.progress} · ${esc(R.STEP_NAME[k.progress])}`:'<span class="chip amber">blank</span>'}</td><td class="num">${R.money(k.amount,k.currency)}</td><td class="num">${R.money(R.feeAUD(k))}</td><td>${R.fmtDate(k.a2aLog?.[0]?.sent,false)||"—"}</td><td>${R.fmtDate(k.dateSubmitted,false)||"—"}</td><td>${R.fmtDate(k.claimApproved,false)||"—"}</td><td>${R.fmtDate(k.refundReceived,false)||"—"}</td><td>${R.fmtDate(k.closedOn,false)||"—"}</td></tr>`}).join("")||'<tr><td colspan="12" class="empty">No claims in this view.</td></tr>'}</tbody></table></div></div>`;
+}
+window._claimNav = (k,v)=>{const p=new URLSearchParams(location.hash.split("?")[1]||"");v?p.set(k,v):p.delete(k);return "#claims?"+p.toString()};
+
+// ---------- FOLLOW-UPS ----------
+function viewFollowUps(q) {
+  const tab = q.get("tab")||"due";
+  const all = S.clients.flatMap(c=>R.followUpsForClient(c,S.claims,haById(),TODAY));
+  let rows, title;
+  if (tab==="a2a") { rows = all.filter(f=>f.kind==="a2a"); title="A2A chase - on the list from the 6th business day after A2A Sent until Signed & Received is entered"; }
+  else if (tab==="ha") { rows = all.filter(f=>f.kind==="ha"&&f.due); title="Holding Authority follow-up - claims past their authority's Chase after days"; }
+  else { rows = all.filter(f=>f.due); title="Every follow-up dated today or earlier, one row per item. Overdue rows are red and at the top, oldest first."; }
+  rows.sort((a,b)=>(a.overdue===b.overdue?(a.date<b.date?-1:1):a.overdue?-1:1));
+  return `<h1 style="margin-bottom:16px">Follow-ups</h1><div class="card"><div class="views" style="margin-bottom:10px">${[["due","Follow Up due"],["a2a","A2A chase"],["ha","Holding Authority follow-up"]].map(([k,l])=>`<a href="#followups?tab=${k}" class="${tab===k?"on":""}">${l}</a>`).join("")}</div><p class="meta" style="margin:0 0 14px">${title} · Today is ${R.fmtDate(TODAY)}.</p>
+  <div class="tw"><table><thead><tr><th>Date</th><th>Client</th><th>Claim</th><th>Type</th><th>Reason / rule</th><th>Owner</th><th>Set by</th><th></th></tr></thead><tbody>
+  ${rows.map(f=>{const c=client(f.clientId),k=f.claimId?claim(f.claimId):null,ha=k?haById()[k.authorityId]:null;return `<tr class="${f.overdue?"over":""}"><td class="${f.overdue?"red":""}" style="white-space:nowrap"><b>${R.fmtDate(f.date)}</b>${f.overdue?`<br><small>${R.daysBetween(f.date,TODAY)} days overdue</small>`:""}</td><td>${clink(c)}${c.specialConditions.length?" "+scChips(c):""}</td><td>${k?`${klink(k)}<br><small class="meta">${esc(ha?.name)}</small>`:"—"}</td><td>${{client:"Client follow-up",claim:"Claim follow-up",ha:"Authority follow-up",a2a:"A2A chase"}[f.kind]}</td><td>${esc(f.sub)}</td><td>${esc(c.owner)}</td><td>${esc(f.setBy)}</td><td>${f.kind==="ha"?`<button class="btn sm" data-chased="${f.claimId}">Chased</button>`:f.kind==="a2a"?`<a class="btn sm" href="#client-${c.id}-${c.stage==="Lead"?"lead":"claims"}" style="display:inline-flex;align-items:center;text-decoration:none">Open</a>`:`<button class="btn sm" data-done="${f.kind}:${f.clientId}:${f.claimId||""}">Done</button>`}</td></tr>`}).join("")||'<tr><td colspan="8" class="empty">Nothing due.</td></tr>'}</tbody></table></div></div>`;
+}
+
+// ---------- REPORTS / SETTINGS / IMPORT ----------
+function viewReports(q) {
+  const tab = q.get("tab")||"sources";
+  const bySrc = {}; for (const c of S.clients) bySrc[c.source||"(blank)"]=(bySrc[c.source||"(blank)"]||0)+1;
+  const max = Math.max(...Object.values(bySrc),1);
+  let body = "";
+  if (tab==="sources") body = `<div class="card"><h2>Lead Source report</h2><div class="stack">${Object.entries(bySrc).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`<div style="display:grid;grid-template-columns:220px 1fr 40px;gap:12px;align-items:center;font-size:14px"><span>${esc(s)}</span><div style="background:var(--chip);border-radius:4px;height:18px"><div style="width:${n/max*100}%;background:var(--lime);height:100%;border-radius:4px"></div></div><b style="text-align:right">${n}</b></div>`).join("")}</div></div>`;
+  else if (tab==="pipeline") { const rows=S.claims.map(k=>({k,c:client(k.clientId)})); body=`<div class="card"><h2>Monthly pipeline (Phase 2 preview)</h2><div class="tw"><table><thead><tr><th>Client</th><th>Source</th><th>Date entered</th><th>A2A Sent</th><th>A2A Signed</th><th>Claim</th><th>Submitted</th><th>Refund</th><th>Closed</th><th>Became Non-Active</th><th class="num">Fee %</th><th class="num">Fee (AUD)</th></tr></thead><tbody>${rows.map(({k,c})=>`<tr><td>${clink(c)}</td><td>${esc(c.source)}</td><td>${R.fmtDate(c.dateEntered,false)}</td><td>${R.fmtDate(c.a2aSent,false)||"—"}</td><td>${R.fmtDate(c.a2aSigned,false)||"—"}</td><td>${klink(k)}</td><td>${R.fmtDate(k.dateSubmitted,false)||"—"}</td><td>${R.fmtDate(k.refundReceived,false)||"—"}</td><td>${R.fmtDate(k.closedOn,false)||"—"}</td><td>${R.fmtDate(c.becameNonActive,false)||"—"}</td><td class="num">${k.feePct??"—"}%</td><td class="num">${R.money(R.feeAUD(k))}</td></tr>`).join("")}</tbody></table></div></div>`; }
+  else if (tab==="checklist") { const items=[...S.clients.filter(c=>c.checklist).map(c=>({who:clink(c),what:c.checklist})),...S.claims.filter(k=>k.checklist).map(k=>({who:klink(k),what:k.checklist}))]; body=`<div class="card"><h2>Migration check-list for MT</h2><p class="meta">Things the migration could not decide. Sorted out by hand after go-live.</p><div class="tw"><table><thead><tr><th>Record</th><th>What to do</th></tr></thead><tbody>${items.map(i=>`<tr><td>${i.who}</td><td>${esc(i.what)}</td></tr>`).join("")}</tbody></table></div></div>`; }
+  else if (tab==="activity") body = USER.role!=="Admin" ? `<div class="card empty">The Activity Log is Admin only.</div>` : `<div class="card"><h2>Activity Log</h2><p class="meta">Every add, edit and delete. Read-only. ${S.activity.length} entries.</p><div class="tw"><table><thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Entity</th><th>Record</th><th>Field</th><th>Old value</th><th>New value</th></tr></thead><tbody>${S.activity.slice(0,200).map(a=>`<tr><td style="white-space:nowrap">${esc(a.ts)}</td><td>${esc(a.user)}</td><td>${esc(a.action)}</td><td>${esc(a.entity)}</td><td>${esc(a.ref)}</td><td>${esc(a.field)}</td><td>${esc(a.oldValue)}</td><td>${esc(a.newValue)}</td></tr>`).join("")}</tbody></table></div></div>`;
+  return `<h1 style="margin-bottom:16px">Reports</h1><div class="views" style="margin-bottom:14px"><a href="#clients" >Client reports ›</a><a href="#claims">Claim reports ›</a>${[["sources","Lead Source"],["pipeline","Monthly pipeline"],["checklist","Migration check-list"],["activity","Activity Log"]].map(([k,l])=>`<a href="#reports?tab=${k}" class="${tab===k?"on":""}">${l}</a>`).join("")}</div>${body}`;
+}
+function viewSettings(q) {
+  if (USER.role!=="Admin") return `<div class="card empty">Settings are Admin only.</div>`;
+  const tab=q.get("tab")||"authorities";
+  let body="";
+  if (tab==="authorities") body=`<div class="card"><h2>Holding Authorities</h2><p class="meta">Authority Code is the first letter of every Claim ID. Chase after / Re-chase after drive the Holding Authority follow-up list.</p><div class="tw"><table><thead><tr><th>Name</th><th>Code</th><th class="num">Chase after (days)</th><th class="num">Re-chase after (days)</th><th>Processing details</th><th class="num">Claims</th></tr></thead><tbody>${S.authorities.map(a=>`<tr><td>${esc(a.name)}</td><td><input data-ha="${a.id}:code" value="${esc(a.code)}" maxlength="1" style="width:50px;height:30px"></td><td class="num"><input data-ha="${a.id}:chaseAfter" value="${a.chaseAfter??""}" style="width:70px;height:30px;text-align:right"></td><td class="num"><input data-ha="${a.id}:rechaseAfter" value="${a.rechaseAfter??""}" style="width:70px;height:30px;text-align:right"></td><td><input data-ha="${a.id}:details" value="${esc(a.details)}" style="height:30px"></td><td class="num">${S.claims.filter(k=>k.authorityId===a.id).length}</td></tr>`).join("")}</tbody></table></div></div>
+  <div class="card" style="margin-top:20px"><h2>Originating Companies</h2><div class="tw"><table><thead><tr><th>Name</th><th>Previous names / acquired by</th><th>Details</th><th class="num">Claims</th></tr></thead><tbody>${S.companies.map(o=>`<tr><td>${esc(o.name)}</td><td>${esc((o.previousNames||[]).join(", "))||"—"}</td><td>${esc(o.details||"")}</td><td class="num">${S.claims.filter(k=>k.companyIds.includes(o.id)).length}</td></tr>`).join("")}</tbody></table></div></div>`;
+  else if (tab==="users") body=`<div class="card"><h2>Users</h2><p class="meta">User codes (initials + number) are shown everywhere instead of names. A User can never delete, see the Activity Log or change settings.</p><div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>Role</th></tr></thead><tbody>${S.users.map(u=>`<tr><td><b>${esc(u.code)}</b></td><td>${esc(u.name)}</td><td>${esc(u.role)}</td></tr>`).join("")}</tbody></table></div><button class="btn sm" style="margin-top:10px" data-adduser>Add user</button></div>`;
+  else if (tab==="bin") body=`<div class="card"><h2>Bin</h2><p class="meta">Deleted records (Admin only) sit here with their claims, notes and files, restorable for the 7-year retention period.</p><div class="empty">Nothing in the bin.</div></div>`;
+  else body=`<div class="card"><h2>Organisation &amp; subscription</h2><div class="grid2" style="max-width:640px"><label class="f">Organisation name<input value="My Refund Finder"></label><label class="f">Short name (shown in codes and reports)<input value="MRF"></label><label class="f">Country / holiday calendar<select><option>Australia - NSW + VIC + national</option><option>Australia - all states</option><option>New Zealand</option></select></label><label class="f">GST rate<input value="10%"></label></div>
+  <h2 style="margin-top:22px">Plan</h2><p class="meta">Placeholder tiers - prices to be set. Billing is handled by Stripe in the hosted app; this prototype only shows the shape.</p><div class="cols" style="margin-top:10px">${[["Solo","1 user","$—/mo",true],["Team","Up to 5 users","$—/mo",false],["Agency","Unlimited users, API access","$—/mo",false]].map(([n,d,p,cur])=>`<div class="tier ${cur?"cur":""}"><div style="font-family:var(--display);font-weight:600">${n}${cur?' <span class="chip lime">current</span>':""}</div><div class="price">${p}</div><div class="meta">${d}</div></div>`).join("")}</div></div>`;
+  return `<h1 style="margin-bottom:16px">Settings</h1><div class="views" style="margin-bottom:14px">${[["authorities","Holding Authorities & Companies"],["users","Users"],["org","Organisation & plan"],["bin","Bin"]].map(([k,l])=>`<a href="#settings?tab=${k}" class="${tab===k?"on":""}">${l}</a>`).join("")}</div>${body}`;
+}
+let IMPORT = { text: LEAD_CSV_SAMPLE, source: "MT Cold Call", skip: new Set() };
+function viewImport() {
+  let rows=[], err="";
+  try { rows = R.parseCSV(IMPORT.text); } catch(e) { err = "Could not read the CSV: " + e.message; }
+  const existing = new Map(S.clients.map(c=>[R.nameKey(c),c]));
+  const seen = new Map();
+  const prev = rows.map((r,i)=>{ const {client:c,flags} = R.importRow(r,TODAY,IMPORT.source); const k=R.nameKey(c); const dup=[]; if (existing.has(k)) dup.push(`existing record ${R.displayName(existing.get(k))}`); if (seen.has(k)) dup.push(`row ${seen.get(k)+1} in this file`); seen.set(k,i); return {c,flags,dup,i}; });
+  return `<h1 style="margin-bottom:16px">Import leads from CSV</h1><div class="cols"><div class="col"><section class="card"><h2>File</h2><p class="meta">Fixed columns, header row. The sample file from the handover pack is loaded - paste your own CSV to try it. Values import exactly: amounts with cents, surnames in capitals, addresses as written.</p><textarea id="csvText" rows="8" style="font-family:ui-monospace,monospace;font-size:12px;white-space:pre">${esc(IMPORT.text)}</textarea><div class="toolbar" style="margin-top:10px"><label class="f" style="font-size:12px">Source for this batch<select id="csvSource">${R.SOURCES.map(s=>`<option ${IMPORT.source===s?"selected":""}>${s}</option>`).join("")}</select></label><button class="btn" id="csvPreview">Preview</button></div>${err?`<div class="warn" style="margin-top:10px">${esc(err)}</div>`:""}</section></div>
+  <div class="col wide"><section class="card"><div class="strip" style="margin-bottom:12px"><h2 style="margin:0">Preview - ${prev.length} rows</h2><button class="btn primary" id="csvImport" ${prev.length?"":"disabled"}>Import ${prev.length-[...IMPORT.skip].filter(i=>i<prev.length).length} leads</button></div><p class="meta" style="margin:0 0 12px">Possible duplicates (same surname + first name, not case-sensitive) are flagged for you to accept or skip. Nothing is blocked or merged automatically.</p>
+  <div class="tw"><table><thead><tr><th>Import</th><th>Name</th><th>Type</th><th class="num">Amount</th><th>Found at</th><th>Special</th><th>Flags</th></tr></thead><tbody>${prev.map(p=>`<tr class="${p.dup.length?"over":""}"><td><input type="checkbox" data-skip="${p.i}" ${IMPORT.skip.has(p.i)?"":"checked"} style="width:auto;height:auto"></td><td><b>${esc(R.displayName(p.c))}</b>${p.c.dob?`<br><small class="meta">DOB ${R.fmtDate(p.c.dob)}</small>`:""}${p.c.phoneMobile||p.c.phoneOther?`<br><small class="meta">${esc(p.c.phoneMobile||p.c.phoneOther)}</small>`:""}</td><td>${esc(p.c.clientType)}</td><td class="num">${R.money(p.c.leadAmount)}</td><td>${esc((p.c.searchLog[0]?.authorities||[]).join(", "))}</td><td>${p.c.specialConditions.map(s=>`<span class="chip lime">${esc(s)}</span>`).join(" ")}</td><td>${p.dup.map(d=>`<span class="chip red">Possible duplicate of ${esc(d)}</span>`).join(" ")} ${p.flags.map(f=>`<span class="chip amber">${esc(f)}</span>`).join(" ")}${p.c.previousAddresses.length?`<span class="meta">${p.c.previousAddresses.length} previous addresses</span>`:""}${p.c.lastContact?` <span class="meta">Last contact ${R.fmtDate(p.c.lastContact)}</span>`:""}</td></tr>`).join("")}</tbody></table></div></section></div></div>`;
+}
+
+// ---------- search ----------
+function search(q) {
+  q = q.trim().toLowerCase(); if (!q) return [];
+  const out = [];
+  for (const c of S.clients) { const hay = [c.surname, c.firstName, ...(c.businessNames||[]), c.email, c.phoneMobile, c.phoneOther, c.clientCode].filter(Boolean).join(" ").toLowerCase(); if (hay.includes(q) || hay.replace(/\s/g,"").includes(q.replace(/\s/g,""))) out.push({ href:`#client-${c.id}`, t:R.displayName(c), s:`${c.stage}${c.clientCode?" · "+c.clientCode:""}${c.phoneMobile?" · "+c.phoneMobile:""}` }); }
+  for (const k of S.claims) { if ((k.claimId||"").toLowerCase().includes(q) || (k.reference||"").toLowerCase().includes(q)) out.push({ href:`#client-${k.clientId}-claims-${k.id}`, t:k.claimId, s:`${R.displayName(client(k.clientId))} · OTN ${k.reference}` }); }
+  return out.slice(0,12);
+}
+
+// ---------- router ----------
+function route() {
+  const h = location.hash.replace(/^#/,"") || "leads"; const [path, qs] = h.split("?"); const q = new URLSearchParams(qs||"");
+  let html="";
+  renderNav(path);
+  if (path==="leads") html = viewLeads(q);
+  else if (path.startsWith("client-")) { const [,id,tab,sub] = path.split("-"); const c = client(id); if (!c) html = `<div class="card empty">Client not found.</div>`; else { html = viewClient(c, tab || (c.stage==="Lead"?"lead":"summary"), sub); } }
+  else if (path==="clients") html = viewClients(q);
+  else if (path==="claims") html = viewClaimReports(q);
+  else if (path==="followups") html = viewFollowUps(q);
+  else if (path==="reports") html = viewReports(q);
+  else if (path==="settings") html = viewSettings(q);
+  else if (path==="import") html = viewImport();
+  else html = viewLeads(q);
+  $("#main").innerHTML = `<div class="banner"><b>Prototype</b> · test data only, today is fixed at ${R.fmtDate(TODAY)} · changes are kept in this browser <button class="btn sm" data-reset>Reset data</button></div>` + html;
+  const sub = path.split("-")[3]; if (sub && document.getElementById(sub)) document.getElementById(sub).scrollIntoView({behavior:"smooth",block:"start"});
+  const cc = path.split("-")[3]; if (cc && path.includes("-claims-")) { const el=document.querySelector(`[data-claimcard="${cc}"]`); if (el) el.scrollIntoView({behavior:"smooth",block:"start"}); }
+  window.scrollTo({top:0});
+}
+function modal(html) { const m=$("#modal"); m.innerHTML=`<div class="modal"><div class="box">${html}</div></div>`; m.hidden=false; }
+function closeModal(){ $("#modal").hidden=true; $("#modal").innerHTML=""; }
+function currentClient() { const p=location.hash.replace(/^#/,"").split("?")[0].split("-"); return p[0]==="client"?client(p[1]):null; }
+
+// ---------- events ----------
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-done],[data-chased],[data-reset],[data-copy],[data-inactive],[data-openclaim],[data-adda2a],[data-addresub],[data-addfile],[data-focus],[data-newlead],[data-addsearch],[data-adduser],[data-close],[data-confirm-inactive],[data-confirm-lead],[data-confirm-search],[data-confirm-user],[data-confirm-file]");
+  if (!t) { if (!e.target.closest(".search")) $("#qres").hidden = true; return; }
+  if (t.dataset.done) { const [kind,cid,kid]=t.dataset.done.split(":"); const c=client(cid); const f=R.followUpsForClient(c,S.claims,haById(),TODAY).find(x=>x.kind===kind&&(x.claimId||"")===kid); if (f) done(f); route(); }
+  else if (t.dataset.chased) { const k=claim(t.dataset.chased); chased({claimId:k.id,clientId:k.clientId}); route(); }
+  else if (t.hasAttribute("data-reset")) { S = JSON.parse(JSON.stringify(SEED)); save(); route(); toast("Test data reset"); }
+  else if (t.dataset.copy!=null) { const txt=t.dataset.copy; (navigator.clipboard?.writeText(txt)||Promise.reject()).then(()=>toast("CSV copied to clipboard")).catch(()=>{ modal(`<h2>CSV</h2><p class="meta">Select all and copy.</p><textarea rows="12" style="font-family:ui-monospace,monospace;font-size:12px">${esc(txt)}</textarea><div style="margin-top:12px;text-align:right"><button class="btn" data-close>Close</button></div>`); }); }
+  else if (t.dataset.inactive) { const c=client(t.dataset.inactive); const open=openClaims(c); modal(`<h2>Set ${esc(R.displayName(c))} Inactive</h2>${open.length?`<p>${open.length} open claim${open.length>1?"s":""} will be closed. Which closing status applies?</p><label class="f">Closing status<select id="mClose">${R.MANUAL_CLOSE_OPTIONS.map(s=>`<option value="${s}">${s} · ${R.STEP_NAME[s]}</option>`).join("")}</select></label>`:"<p>No open claims.</p>"}<label class="f" style="margin-top:12px">Inactive Reason<select id="mReason"><option value="">(leave blank)</option>${R.INACTIVE_REASONS.filter(r=>r!=="Completed").map(r=>`<option>${r}</option>`).join("")}</select></label><div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn danger" data-confirm-inactive="${c.id}">Set Inactive</button></div>`); }
+  else if (t.dataset.confirmInactive) { const c=client(t.dataset.confirmInactive); setInactiveByHand(c, $("#mReason").value, Number($("#mClose")?.value||21)); closeModal(); route(); toast(`${R.displayName(c)} set Inactive by ${USER.code}`); }
+  else if (t.dataset.openclaim) { const c=client(t.dataset.openclaim); const ha=$("#newClaimHA").value; if(!ha){toast("Pick a Holding Authority first");return;} const k=openClaim(c,ha); if (k) { location.hash=`#client-${c.id}-claims-${k.id}`; toast(`Opened ${k.claimId}`); } }
+  else if (t.dataset.adda2a) { const k=claim(t.dataset.adda2a); (k.a2aLog=k.a2aLog||[]).push({sent:TODAY,signed:null,reason:"New address found"}); touch(client(k.clientId),k); log("Edited","Claim",k.claimId,"A2A Log","",`Sent ${TODAY}`); save(); route(); toast("A2A entry added - it will be chased from the 6th business day"); }
+  else if (t.dataset.addresub) { const k=claim(t.dataset.addresub); (k.resubmissions=k.resubmissions||[]).push(TODAY); if(k.progress!==9){k.progress=9;} touch(client(k.clientId),k); log("Edited","Claim",k.claimId,"Date Resubmitted","",TODAY); save(); route(); }
+  else if (t.dataset.addfile) { const c=client(t.dataset.addfile); modal(`<h2>Add file</h2><p class="meta">In the hosted app the file is copied into the organisation's storage and linked to ${esc(R.displayName(c))}. Here, just name it.</p><label class="f">File name<input id="mFile" value="UCM - screenshot.png"></label><div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" data-confirm-file="${c.id}">Add</button></div>`); }
+  else if (t.dataset.confirmFile) { const c=client(t.dataset.confirmFile); const n=$("#mFile").value.trim()||"file"; S.files.push({id:newId("f"),clientId:c.id,name:n,kind:/\.(png|jpe?g|gif)$/i.test(n)?"image":"file",by:USER.code,date:TODAY}); touch(c); log("Created","File",ref(c),"Attachments","",n); save(); closeModal(); route(); }
+  else if (t.dataset.focus) { const el=document.getElementById(t.dataset.focus); if (el) { el.scrollIntoView({behavior:"smooth",block:"center"}); el.focus(); } }
+  else if (t.hasAttribute("data-newlead")) { modal(`<h2>New lead</h2><div class="grid2"><label class="f">Client Type<select id="mType"><option>Individual</option><option>Business</option></select></label><label class="f">Source<select id="mSrc">${R.SOURCES.map(s=>`<option>${s}</option>`).join("")}</select></label><label class="f">Surname / Business name<input id="mSur"></label><label class="f">First Name<input id="mFirst"></label><label class="f">Lead Amount<input id="mAmt" placeholder="$0.00"></label><label class="f">Phone - Mobile<input id="mPh"></label></div><div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" data-confirm-lead>Create lead</button></div>`); }
+  else if (t.hasAttribute("data-confirm-lead")) { const biz=$("#mType").value==="Business"; const c={id:newId("c"),clientType:biz?"Business":"Individual",surname:biz?"":$("#mSur").value.trim(),firstName:biz?"":$("#mFirst").value.trim(),businessNames:biz?[$("#mSur").value.trim()]:[],stage:"Lead",leadIdentifier:"New import",owner:USER.code,source:$("#mSrc").value,leadAmount:R.parseMoney($("#mAmt").value),phoneMobile:$("#mPh").value.trim(),previousAddresses:[],specialConditions:[],searchLog:[],notes:[],dateEntered:TODAY,lastUpdatedBy:USER.code,lastUpdated:TODAY}; if(!(c.surname||c.businessNames[0])){toast("A name is needed");return;} S.clients.push(c); log("Created","Client",ref(c)); save(); closeModal(); location.hash=`#client-${c.id}`; }
+  else if (t.dataset.addsearch) { const c=client(t.dataset.addsearch); modal(`<h2>Add search</h2><label class="f">Date searched<input type="date" id="mSd" value="${TODAY}"></label><div class="f" style="margin-top:10px">Found at<div class="chips">${S.authorities.map(a=>`<label class="chip" style="cursor:pointer"><input type="checkbox" class="mSa" value="${esc(a.name)}" style="width:auto;height:auto;margin-right:4px">${esc(a.name)}</label>`).join("")}</div></div><div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" data-confirm-search="${c.id}">Add</button></div>`); }
+  else if (t.dataset.confirmSearch) { const c=client(t.dataset.confirmSearch); c.searchLog.unshift({date:$("#mSd").value||TODAY,authorities:[...document.querySelectorAll(".mSa:checked")].map(x=>x.value)}); touch(c); log("Edited","Client",ref(c),"Search Log","","added"); save(); closeModal(); route(); }
+  else if (t.hasAttribute("data-adduser")) { modal(`<h2>Add user</h2><div class="grid2"><label class="f">Name<input id="mUn"></label><label class="f">User code<input id="mUc" placeholder="e.g. JS3" maxlength="4"></label><label class="f">Role<select id="mUr"><option>User</option><option>Admin</option></select></label></div><div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" data-confirm-user>Add</button></div>`); }
+  else if (t.hasAttribute("data-confirm-user")) { const code=$("#mUc").value.trim().toUpperCase(); if(!code||S.users.some(u=>u.code===code)){toast("Enter a unique user code");return;} S.users.push({code,name:$("#mUn").value.trim(),role:$("#mUr").value}); log("Created","User",code); save(); closeModal(); route(); }
+  else if (t.hasAttribute("data-close")) closeModal();
+});
+document.addEventListener("change", e => {
+  const t = e.target; const c = currentClient();
+  if (t.id==="leadId" && c) { setLeadIdentifier(c, t.value); route(); return; }
+  if (t.hasAttribute("data-a2asigned") && c) { setA2ASigned(c, t.value); route(); return; }
+  if (t.dataset.field && c) { const f=t.dataset.field; const old=c[f]; let v=t.value; if (t.hasAttribute("data-money")) v=R.parseMoney(v); if (f==="owner"&&USER.role!=="Admin") return; c[f]=v===""?null:v; if (f==="clientType") c.businessNames=c.businessNames||[]; if (f==="followUp") c.followUpSetBy=USER.code; touch(c); log("Edited","Client",ref(c),f,old??"",v??""); save(); if (["clientType","inactiveReason","owner","followUp"].includes(f)) route(); return; }
+  if (t.dataset.list && c) { c[t.dataset.list]=t.value.split("\n").map(s=>s.trim()).filter(Boolean); touch(c); log("Edited","Client",ref(c),t.dataset.list,"",c[t.dataset.list].join("; ")); save(); return; }
+  if (t.dataset.multi && c) { const v=[...t.selectedOptions].map(o=>o.value); c[t.dataset.multi]=v; if (t.dataset.multi==="relatedIds") { for (const x of S.clients) { x.relatedIds=(x.relatedIds||[]).filter(i=>i!==c.id); if (v.includes(x.id)) x.relatedIds.push(c.id); } } touch(c); log("Edited","Client",ref(c),t.dataset.multi,"",v.join(",")); save(); return; }
+  if (t.dataset.sc && c) { c.specialConditions = R.SPECIAL_CONDITIONS.filter(s => s===t.dataset.sc ? t.checked : c.specialConditions.includes(s)); touch(c); log("Edited","Client",ref(c),"Special Condition","",c.specialConditions.join(", ")); save(); route(); return; }
+  if (t.dataset.progress) { setProgress(claim(t.dataset.progress), t.value); route(); return; }
+  const card = t.closest("[data-claimcard]"); const k = card ? claim(card.dataset.claimcard) : null;
+  if (k && t.dataset.cfield) { const f=t.dataset.cfield; const old=k[f]; let v=t.value; if (t.hasAttribute("data-money")) v=R.parseMoney(v); else if (t.hasAttribute("data-num")) v=v===""?null:Number(v); k[f]=v===""?null:v; if (f==="followUp") k.followUpSetBy=USER.code; if (f==="addressOnRegister"&&v&&![c.currentAddress,...(c.previousAddresses||[])].includes(v)) { (c.previousAddresses=c.previousAddresses||[]).push(v); toast("New address added to Previous Addresses"); } touch(c,k); log("Edited","Claim",k.claimId,f,old??"",v??""); save(); if (["currency","feePct","gst","amount","feeManual","followUp","dateSubmitted"].includes(f)) route(); return; }
+  if (k && t.dataset.cmulti) { k[t.dataset.cmulti]=[...t.selectedOptions].map(o=>o.value); touch(c,k); log("Edited","Claim",k.claimId,t.dataset.cmulti,"",k[t.dataset.cmulti].join(",")); save(); route(); return; }
+  if (t.dataset.a2asign) { const [kid,i]=t.dataset.a2asign.split(":"); const kk=claim(kid); kk.a2aLog[Number(i)].signed=t.value||null; if (kk.progress===2) kk.progress=3; touch(client(kk.clientId),kk); log("Edited","Claim",kk.claimId,"A2A Signed & Received","",t.value); save(); route(); return; }
+  if (t.dataset.ha) { const [id,f]=t.dataset.ha.split(":"); const a=S.authorities.find(x=>x.id===id); const old=a[f]; a[f]=["chaseAfter","rechaseAfter"].includes(f)?(t.value===""?null:Number(t.value)):t.value.toUpperCase?.()&&f==="code"?t.value.toUpperCase():t.value; log("Edited","Holding Authority",a.name,f,old??"",a[f]??""); save(); return; }
+  if (t.dataset.nav) { const p=location.hash.replace(/^#/,"").split("?")[0]; location.hash = (p==="claims"?window._claimNav:window._clientNav)(t.dataset.nav,t.value); return; }
+  if (t.dataset.skip!=null) { const i=Number(t.dataset.skip); t.checked?IMPORT.skip.delete(i):IMPORT.skip.add(i); route(); return; }
+  if (t.id==="csvSource") IMPORT.source=t.value;
+});
+document.addEventListener("keydown", e => {
+  if (e.target.dataset?.note!=null && e.key==="Enter" && !e.shiftKey) { e.preventDefault(); const c=client(e.target.dataset.note); addNote(c, e.target.value, e.target.dataset.claim||null); route(); toast("Note saved - Last Contact updated"); }
+});
+document.addEventListener("click", e => {
+  if (e.target.id==="csvPreview") { IMPORT.text=$("#csvText").value; IMPORT.skip=new Set(); route(); }
+  if (e.target.id==="csvImport") { const rows=R.parseCSV(IMPORT.text); let n=0; rows.forEach((r,i)=>{ if (IMPORT.skip.has(i)) return; const {client:c}=R.importRow(r,TODAY,IMPORT.source); c.id=newId("c"); c.lastUpdatedBy=USER.code; c.lastUpdated=TODAY; S.clients.push(c); log("Created","Client",ref(c),"","","Lead CSV import"); n++; }); save(); toast(`${n} leads imported`); location.hash="#leads?id=New%20import"; }
+  if (e.target.id==="userBtn") { USER = S.users[(S.users.indexOf(USER)+1)%S.users.length]; toast(`Now working as ${USER.code} (${USER.role})`); route(); }
+});
+$("#q").addEventListener("input", e => { const r=search(e.target.value); const box=$("#qres"); box.innerHTML=r.map(x=>`<a href="${x.href}">${esc(x.t)}<small>${esc(x.s)}</small></a>`).join("")||(e.target.value.trim()?'<div class="empty">No matches</div>':""); box.hidden=!e.target.value.trim(); });
+$("#qres").addEventListener("click", ()=>{ $("#qres").hidden=true; $("#q").value=""; });
+window.addEventListener("hashchange", route);
+route();
+})();
+</script>

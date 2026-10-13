@@ -1,26 +1,71 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Brand (Spec 9.2): Navy #0C3C60, Lime #BADA55, White. Poppins stands in for Brandon Grotesque, Nunito Sans for Avenir. */
+@theme {
+  --color-navy: #0C3C60;
+  --color-navy-deep: #082a44;
+  --color-lime: #BADA55;
+  --color-lime-soft: #EEF5D6;
+  --color-ground: #F3F6F9;
+  --color-ink: #0C3C60;
+  --color-muted: #5B6B7A;
+  --color-line: #DDE5EC;
+  --color-line-strong: #C9D4DE;
+  --color-chip: #E8EEF3;
+  --color-alert: #D92D20;
+  --color-alert-soft: #FEF0EE;
+  --color-warn: #B54708;
+  --color-warn-soft: #FFF4E5;
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Nunito Sans", "Avenir", ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: 0 1px 2px rgba(12, 60, 96, 0.08);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@layer base {
+  html { font-family: var(--font-body); color: var(--color-ink); background: var(--color-ground); font-size: 15px; }
+  h1, h2, h3, .display { font-family: var(--font-display); }
+  h1 { font-size: 26px; font-weight: 700; }
+  h2 { font-size: 17px; font-weight: 600; }
+  a { color: inherit; }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .card { @apply bg-white rounded-[10px] px-6 py-5 shadow-card min-w-0; }
+  .card h2 { @apply mb-3.5; }
+  .btn { @apply inline-flex items-center justify-center h-[38px] px-4 rounded-md border border-navy bg-white text-ink font-display font-semibold text-[13px] cursor-pointer whitespace-nowrap no-underline disabled:opacity-50 disabled:cursor-not-allowed hover:bg-ground; }
+  .btn-primary { @apply bg-lime border-lime text-navy hover:bg-[#b0d04a]; }
+  .btn-sm { @apply h-8 px-3 text-[12px]; }
+  .btn-danger { @apply border-alert text-alert hover:bg-alert-soft; }
+  .input { @apply block w-full min-w-0 h-[38px] rounded-md border border-line-strong bg-white px-2.5 text-[15px] text-ink focus:outline-2 focus:outline-lime; }
+  textarea.input { @apply h-auto py-2 leading-snug resize-y; }
+  .label { @apply flex flex-col gap-1 text-[13px] font-bold text-muted min-w-0; }
+  .value { @apply text-[15px] font-normal text-ink whitespace-pre-line break-words; }
+  .chip { @apply inline-block rounded-full bg-chip text-ink px-2.5 py-[3px] text-[13px] font-bold leading-tight; }
+  .chip-lime { @apply bg-lime text-navy; }
+  .chip-outline { @apply bg-transparent border border-ink; }
+  .chip-red { @apply bg-alert-soft text-alert; }
+  .chip-amber { @apply bg-warn-soft text-warn; }
+  .meta { @apply text-[13px] text-muted; }
+  .meta b { @apply text-ink; }
+  .tbl { @apply w-full border-collapse text-[14px] tabular-nums; }
+  .tbl th { @apply text-left text-[12px] tracking-wide uppercase text-muted px-2.5 py-2 border-b-2 border-line whitespace-nowrap; }
+  .tbl td { @apply px-2.5 py-2 border-b border-line align-top; }
+  .tbl .num { @apply text-right; }
+  .tbl tr.over td { @apply bg-alert-soft; }
+  .tbl tr.over td:first-child { box-shadow: inset 4px 0 0 var(--color-alert); }
+  .link { @apply font-semibold underline underline-offset-2 hover:text-navy-deep; }
+  .views { @apply flex flex-wrap gap-1.5; }
+  .views a, .views button { @apply no-underline text-[13px] font-semibold px-3 py-1.5 rounded-full border border-line-strong bg-white cursor-pointer; }
+  .views .on { @apply bg-navy text-white border-navy; }
+  .fu { @apply flex gap-3 items-center border border-line rounded-lg px-3.5 py-2.5; }
+  .fu.over { @apply bg-alert-soft border-[#F5C2BD]; }
+  .warn-box { @apply bg-warn-soft border border-[#F4D9A6] rounded-lg px-3 py-2 text-[13px] text-warn; }
+  .red { color: var(--color-alert) !important; }
+  .tabs { @apply flex gap-1 border-b border-line mt-3.5 overflow-x-auto; }
+  .tabs a { @apply no-underline px-4 py-2.5 font-display font-medium text-[14px] text-muted border-b-[3px] border-transparent whitespace-nowrap; }
+  .tabs a.on { @apply text-ink border-lime font-semibold; }
+  .grid2 { @apply grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3.5; }
+  .grid3 { @apply grid grid-cols-1 sm:grid-cols-3 gap-x-5 gap-y-3.5; }
+  .span2 { @apply sm:col-span-2; }
+  .span3 { @apply sm:col-span-3; }
 }

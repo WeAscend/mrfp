@@ -1,0 +1,8 @@
+Surname,First Name,Middle Name,Search Results,Amount,Last Contact Date,Notes,Status,Address on UCM,Special Condition,Email,Phone - Mobile,Phone - Other,DOB,ABN,Current Address,Previous Address 1,Previous Address 2,Previous Address 3,Attachments,No. of days since contact
+IMPORTA,Ian,,ASIC,"$7,493.21",,,LEADS - NEW,"12 Example St, Sydney NSW 2000",,,,,,,,,,,,
+IMPORTB,Isla,Jane,"ASIC, Revenue NSW","$1,234.05",,,,"3 Second Ave, Newcastle NSW 2300",,,0400 111 222,,05/11/1972,,,,,,,
+tester,alice,,SRO Vic,$300.00,,,LEADS - NEW,"1 Test Street, Testville NSW 2000",,,,,,,,,,,,
+IMPORT FREIGHT PTY LTD,,,ASIC,"$18,200.00",,,LEADS - NEW,"PO Box 1, Perth WA 6000",Business,,,,,11 111 111 111,,,,,,
+IMPORTC,Ivan,,ASIC,$560.40,,,LEADS - NEW,"9 Fund Rd, Hobart TAS 7000",Super Fund,,,,,,,,,,,
+IMPORTD,Ivy,,NZ IRD,"$2,000.00",,"Status is not LEADS - NEW, so the preview should flag it.",LEAD - Green,"4 Kiwi St, Auckland 1010, NZ",NZ,,,,,,,,,,,
+IMPORTE,Igor,,ASIC,$99.99,1/10/2026,,,"6 Old St, Darwin NT 0800",,,,08 8900 0000,,,,"1 Former Rd, Alice Springs NT 0870","2 Earlier Rd, Katherine NT 0850",,,

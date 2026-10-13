@@ -1,0 +1,14 @@
+Record ID,Holding Authority,Holding Authority or Company,Notes,Phone Number,Phone Number - other,Email,Website,Address,Mailing Address,Claims
+rec87B18874df99ce,ASIC,Holding Authority,Wet signatures only.,1300 300 630,,,,,"GPO Box 0000, Melbourne VIC 3001 (TEST)","1,4,9"
+rec45F7F8Beb2ee95,Revenue NSW,Holding Authority,,,,,,,,"2,6"
+recE5E33C0b940dee,SRO Victoria,Holding Authority,Own form; e-signatures accepted.,,,,,,,5
+rec147E8601566d5e,Treasury SA,Holding Authority,,,,,,,,7
+recD17F49124b6c2e,WA Dept of Treasury & Finance,Holding Authority,,,,,,,,8
+rec9D1170C787344d,PT QLD,Holding Authority,Form signed by a JP and posted.,,,,,,,
+recCAEB51446d3b2f,NZ IRD,Holding Authority,,,,,,,,3
+recAEEF5BC3e962a5,Treasury ACT,Holding Authority,,,,,,,,
+rec54D8EDA10fbfc1,Public Trust Tasmania,Holding Authority,,,,,,,,
+recC82A3063ab4060,Example Bank,Originating Company,Responsive by email.,13 00 00,+61 2 0000 0000,unclaimed@examplebank.test,,,,1
+recAAF840Dfe660e0,Sample Mutual (formerly Old Credit Union),Originating Company,,,,,,,,
+rec214FD3Bba06dd9,Old Credit Union - See Sample Mutual,Originating Company,,,,,,,,8
+rec11A5AB65dd133e,Test Mining Ltd,Originating Company,Send to ASIC directly.,,,,,,,4
