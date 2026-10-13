@@ -108,6 +108,7 @@ export type SendOpts = { clientId: string; key: string; claimId?: string | null;
  * Records the message, a system note, the Activity Log entry, and runs the template's side effects.
  */
 export async function sendToClient(t: Tenant, o: SendOpts) {
+  if (!t.org.outreachEnabled) throw new Error("Outreach is switched off in Settings");
   const c = await db.query.clients.findFirst({ where: ownClient(t.org.id, o.clientId), with: { searchLog: { orderBy: (s, { desc }) => [desc(s.date)], limit: 1 } } }); if (!c) throw new Error("Client not found");
   const tpl = await template(t, o.key); const ch = tpl.channel as Channel;
   const state = channelState(c, ch);
@@ -153,6 +154,7 @@ async function afterSend(t: Tenant, c: schema.Client, key: TemplateKey, k: (sche
 
 /** Chase a holding authority by email about a claim. Not a client message, so no consent gate — but still identified. */
 export async function chaseAuthority(t: Tenant, claimId: string, opts: { to?: string; overrideBody?: string; overrideSubject?: string } = {}) {
+  if (!t.org.outreachEnabled) throw new Error("Outreach is switched off in Settings");
   const k = await db.query.claims.findFirst({ where: ownClaim(t.org.id, claimId), with: { authority: true, client: true } }); if (!k) throw new Error("Claim not found");
   const to = opts.to || k.authority.emails[0]; if (!to) throw new Error(`${k.authority.name} has no email address — add one under Settings › Holding authorities, or chase by phone and press Chased.`);
   const tpl = await template(t, "ha_chase");
@@ -194,6 +196,7 @@ export async function logCall(t: Tenant, clientId: string, i: CallInput) {
 
 // ---------- e-sign ----------
 export async function createSignRequest(t: Tenant, clientId: string, o: { via: "EMAIL" | "SMS" | "BOTH"; feePct: number; claimId?: string | null; expiresDays?: number }) {
+  if (!t.org.outreachEnabled) throw new Error("Outreach is switched off in Settings");
   const c = await db.query.clients.findFirst({ where: ownClient(t.org.id, clientId) }); if (!c) throw new Error("Client not found");
   if (o.via !== "SMS" && !firstEmail(c.email)) throw new Error("No valid email address on the record");
   if (o.via !== "EMAIL" && !toE164(c.phoneMobile)) throw new Error("No valid mobile number on the record");

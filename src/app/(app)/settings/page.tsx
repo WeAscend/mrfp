@@ -6,7 +6,7 @@ import { authorityMap, companies } from "@/lib/services/queries";
 import { members } from "@/lib/services/org";
 import * as R from "@/lib/rules";
 import { Empty } from "@/components/ui";
-import { AuthorityRow, CompanyForm, AddUserForm, OrgForm, OutreachForm, TemplateEditor } from "./SettingsClient";
+import { AuthorityRow, CompanyForm, AddUserForm, OrgForm, OutreachForm, OutreachSwitch, TemplateEditor } from "./SettingsClient";
 import { templates } from "@/lib/services/comms";
 import { PLACEHOLDERS, DEFAULT_TEMPLATES } from "@/lib/templates";
 import { RunAutomationButton } from "@/components/commsClient";
@@ -32,6 +32,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   } else if (tab === "outreach") {
     const tpls = await templates(t);
     body = <>
+      <div className="card !py-4 mb-5"><OutreachSwitch on={t.org.outreachEnabled} /></div>
       <div className="card"><h2>Sender identity & automation</h2><p className="meta mb-3">Email: <b>{mailDriver() === "resend" ? "connected (Resend)" : "not connected — messages are logged only"}</b> · SMS: <b>{smsDriver() === "twilio" ? "connected (Twilio)" : "not connected"}</b>. Every email carries these details and an unsubscribe link; every SMS ends with "Reply STOP to opt out".</p><OutreachForm org={t.org} /><div className="mt-4 pt-3 border-t border-line flex items-center gap-3"><RunAutomationButton /><span className="meta">Reminders normally run once a day (vercel.json cron). Use this to send any that are due right now.</span></div></div>
       <div className="card mt-5"><h2>Templates</h2><p className="meta mb-3">Plain text. Placeholders: {PLACEHOLDERS.map(([k]) => <code key={k} className="mr-1.5">{k}</code>)}</p>
         <div className="flex flex-col gap-3">{tpls.map(x => <div key={x.key}><TemplateEditor t={x} /><div className="meta mt-1 ml-1">{DEFAULT_TEMPLATES.find(d => d.key === x.key)?.when}</div></div>)}</div></div>

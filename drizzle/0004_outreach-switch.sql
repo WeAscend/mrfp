@@ -1,0 +1,1 @@
+ALTER TABLE "organisations" ADD COLUMN "outreach_enabled" boolean DEFAULT false NOT NULL;

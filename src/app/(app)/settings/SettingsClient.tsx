@@ -46,6 +46,10 @@ export function OrgForm({ org }: { org: Organisation }) {
   </div>;
 }
 
+export function OutreachSwitch({ on }: { on: boolean }) {
+  const { act, pending } = useAct();
+  return <label className="flex items-center gap-3 text-[15px]"><input type="checkbox" className="w-4 h-4" checked={on} disabled={pending} onChange={e => act(() => updateOrgAction({ outreachEnabled: e.target.checked }))} /><span><b>Outreach is {on ? "on" : "off"}.</b> <span className="meta">{on ? "Email, SMS and e-signature buttons are shown across the app." : "Send buttons are hidden; calls, consent and follow-ups still work. Switch on when your sending address is set up."}</span></span></label>;
+}
 export function OutreachForm({ org }: { org: Organisation }) {
   const [f, setF] = useState({ fromEmail: org.fromEmail ?? "", replyTo: org.replyTo ?? "", postalAddress: org.postalAddress ?? "", phone: org.phone ?? "", website: org.website ?? "", smsSenderId: org.smsSenderId ?? "", a2aReminderDays: org.a2aReminderDays, infoFollowUpDays: org.infoFollowUpDays, a2aTemplate: org.a2aTemplate ?? "" });
   const { act, pending } = useAct(); const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });

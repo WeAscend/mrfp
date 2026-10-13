@@ -76,7 +76,7 @@ export async function upsertCompany(t: Tenant, input: { id?: string; name: strin
     return o.id;
   });
 }
-export async function updateOrg(t: Tenant, patch: { name?: string; shortName?: string; holidayRegions?: string; gstRate?: string; a2aChaseBusinessDays?: number; revisitMonths?: number; fromEmail?: string | null; replyTo?: string | null; postalAddress?: string | null; phone?: string | null; website?: string | null; smsSenderId?: string | null; a2aTemplate?: string | null; a2aReminderDays?: string; infoFollowUpDays?: number }) {
+export async function updateOrg(t: Tenant, patch: { name?: string; shortName?: string; holidayRegions?: string; gstRate?: string; a2aChaseBusinessDays?: number; revisitMonths?: number; fromEmail?: string | null; replyTo?: string | null; postalAddress?: string | null; phone?: string | null; website?: string | null; smsSenderId?: string | null; a2aTemplate?: string | null; a2aReminderDays?: string; infoFollowUpDays?: number; outreachEnabled?: boolean }) {
   if (!t.isAdmin) throw new Error("Admin only");
   await db.update(schema.organisations).set(patch).where(eq(schema.organisations.id, t.org.id));
 }

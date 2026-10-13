@@ -29,7 +29,7 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
             <td><ClientLink c={f.client} /> <SCChips list={f.client.specialConditions} empty="" /></td>
             <td>{f.claim ? <><ClaimLink clientId={f.clientId} id={f.claim.id} claimId={f.claim.claimId} /><br /><small className="meta">{f.claim.authorityName}</small></> : "—"}</td>
             <td>{KIND[f.kind]}</td><td>{f.sub}</td><td>{f.client.ownerCode}</td><td>{f.setBy || "—"}</td>
-            <td className="whitespace-nowrap">{f.kind === "ha" ? <span className="inline-flex gap-1.5"><ChasedButton claimId={f.claim!.id} /><ChaseEmailButton claimId={f.claim!.id} to={haEmail(f.claim!.authorityName)} small /></span> : f.kind === "a2a" ? <Link href={`/clients/${f.clientId}${f.claim ? `?tab=claims&claim=${f.claim.id}` : ""}`} className="btn btn-sm">Open</Link> : <DoneButton kind={f.kind} clientId={f.clientId} claimId={f.claim?.id} />}</td>
+            <td className="whitespace-nowrap">{f.kind === "ha" ? <span className="inline-flex gap-1.5"><ChasedButton claimId={f.claim!.id} />{t.org.outreachEnabled && <ChaseEmailButton claimId={f.claim!.id} to={haEmail(f.claim!.authorityName)} small />}</span> : f.kind === "a2a" ? <Link href={`/clients/${f.clientId}${f.claim ? `?tab=claims&claim=${f.claim.id}` : ""}`} className="btn btn-sm">Open</Link> : <DoneButton kind={f.kind} clientId={f.clientId} claimId={f.claim?.id} />}</td>
           </tr>)}
           {!rows.length && <tr><td colSpan={8}><Empty>Nothing here.</Empty></td></tr>}
         </tbody></table></div>

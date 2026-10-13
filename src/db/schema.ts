@@ -36,6 +36,7 @@ export const organisations = pgTable("organisations", {
   a2aTemplate: text("a2a_template"), // Authority to Act wording for in-house e-sign; placeholders like {{name}}
   a2aReminderDays: text("a2a_reminder_days").notNull().default("3,6"),
   infoFollowUpDays: integer("info_follow_up_days").notNull().default(7),
+  outreachEnabled: boolean("outreach_enabled").notNull().default(false), // hides email/SMS/e-sign buttons until the business is ready
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

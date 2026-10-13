@@ -29,7 +29,7 @@ export function LeadScreen({ t, c, fus, byId, tl, openSign, emailState, smsState
           <div>Owner<span>{c.ownerCode}</span></div>
           <div>Source<span>{c.source || "—"}</span></div>
         </div>
-        <div className="flex gap-2.5 flex-wrap mt-5"><LogCallButton clientId={c.id} hasEmail={hasEmail} emailState={emailState} primary /><SendMessageButton clientId={c.id} templateKey="info_email" label="Send info email" /><SendA2AButton clientId={c.id} hasEmail={hasEmail} hasMobile={hasMobile} open={openSign} /><Link href={`/clients/${c.id}?tab=profile`} className="btn">Full record</Link><SetInactiveButton clientId={c.id} openClaims={0} name={R.displayName(c)} /></div>
+        <div className="flex gap-2.5 flex-wrap mt-5"><LogCallButton clientId={c.id} hasEmail={hasEmail} emailState={emailState} primary />{t.org.outreachEnabled && <><SendMessageButton clientId={c.id} templateKey="info_email" label="Send info email" /><SendA2AButton clientId={c.id} hasEmail={hasEmail} hasMobile={hasMobile} open={openSign} /></>}<Link href={`/clients/${c.id}?tab=profile`} className="btn">Full record</Link><SetInactiveButton clientId={c.id} openClaims={0} name={R.displayName(c)} /></div>
       </div>
       <div className="flex flex-wrap gap-5 items-start mt-5">
         <div className="flex-1 basis-[420px] flex flex-col gap-5 min-w-0">
@@ -59,7 +59,7 @@ export function LeadScreen({ t, c, fus, byId, tl, openSign, emailState, smsState
             <div className="mt-3.5"><FileUpload clientId={c.id} label="Drop register or Acceleon screenshots here" /></div>
           </Section>
           <Notes c={c} t={t} byId={byId} />
-          <Timeline items={tl} right={openSign ? <span className="inline-flex gap-2 items-center"><span className="chip chip-amber">A2A awaiting signature · {openSign.remindersSent} reminder(s)</span><CancelSignButton id={openSign.id} /></span> : smsState === "ok" ? <SendMessageButton clientId={c.id} templateKey="info_sms" label="Send info SMS" small /> : null} />
+          <Timeline items={tl} right={openSign ? <span className="inline-flex gap-2 items-center"><span className="chip chip-amber">A2A awaiting signature · {openSign.remindersSent} reminder(s)</span><CancelSignButton id={openSign.id} /></span> : t.org.outreachEnabled && smsState === "ok" ? <SendMessageButton clientId={c.id} templateKey="info_sms" label="Send info SMS" small /> : null} />
         </div>
       </div>
     </>
