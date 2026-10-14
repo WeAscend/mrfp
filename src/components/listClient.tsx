@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { DateInput } from "./DateInput";
 
 export function FilterBar({ base, current, filters, dateRange }: { base: string; current: Record<string, string>; filters: { key: string; label: string; options: string[][] }[]; dateRange?: { fromKey: string; toKey: string; label: string } }) {
   const router = useRouter();
@@ -7,7 +8,7 @@ export function FilterBar({ base, current, filters, dateRange }: { base: string;
   return (
     <>
       {filters.map(f => <label key={f.key} className="label text-[12px]">{f.label}<select className="input !h-[34px] !w-auto text-[14px] min-w-[130px]" value={current[f.key] || ""} onChange={e => go(f.key, e.target.value)}><option value="">Any</option>{f.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>)}
-      {dateRange && <label className="label text-[12px]">{dateRange.label}<span className="flex gap-1 items-center"><input type="date" className="input !h-[34px] !w-auto text-[13px]" value={current[dateRange.fromKey] || ""} onChange={e => go(dateRange.fromKey, e.target.value)} /><span className="meta">to</span><input type="date" className="input !h-[34px] !w-auto text-[13px]" value={current[dateRange.toKey] || ""} onChange={e => go(dateRange.toKey, e.target.value)} /></span></label>}
+      {dateRange && <label className="label text-[12px]">{dateRange.label}<span className="flex gap-1 items-center"><DateInput bare className="input !h-[34px] !w-[130px] text-[13px]" value={current[dateRange.fromKey] || ""} onChange={v => go(dateRange.fromKey, v)} /><span className="meta">to</span><DateInput bare className="input !h-[34px] !w-[130px] text-[13px]" value={current[dateRange.toKey] || ""} onChange={v => go(dateRange.toKey, v)} /></span></label>}
       {Object.keys(current).some(k => current[k] && k !== "view" && k !== "tab") && <button className="btn btn-sm" onClick={() => router.push(base + (current.view ? `?view=${current.view}` : ""))}>Clear filters</button>}
     </>
   );

@@ -50,6 +50,8 @@ export const addDays = (s: string, n: number) => { const d = parseISO(s); d.setU
 export function addMonths(s: string, n: number) { const d = parseISO(s); const day = d.getUTCDate(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + n); const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate(); d.setUTCDate(Math.min(day, last)); return iso(d); }
 export const daysBetween = (a: string, b: string) => Math.round((parseISO(b).getTime() - parseISO(a).getTime()) / 86400000);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** DD/MM/YYYY for ISO-looking values; anything else passes through (Decisions 2.1). */
+export const dmy = (v: string | null | undefined) => v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? `${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(0, 4)}` : v ?? "";
 export function fmtDate(s: string | null | undefined, withYear = true) { if (!s) return ""; const d = parseISO(s); return withYear ? `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}` : `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`; }
 export function parseAUDate(s: string | null | undefined): string | null { // D/MM/YYYY -> ISO
   if (!s) return null; const m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if (!m) return null;

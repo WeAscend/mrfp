@@ -5,6 +5,7 @@ import { updateTemplateAction, createTemplateAction, deleteTemplateAction, addHo
 import { OPTION_SETS, type Options } from "@/lib/options";
 import type { HoldingAuthority, OriginatingCompany, Organisation } from "@/db/schema";
 import { useToast } from "@/components/Toast";
+import { DateInput } from "@/components/DateInput";
 
 function useAct() { const { report } = useToast(); const router = useRouter(); const [pending, start] = useTransition(); return { pending, act: (fn: () => Promise<ActionResult>, after?: () => void) => start(async () => { if (report(await fn())) { router.refresh(); after?.(); } }) }; }
 
@@ -112,7 +113,7 @@ export function HolidayAdmin({ rows }: { rows: { date: string; region: string; n
     <div className="flex flex-wrap items-end gap-2.5 mb-3">
       <label className="label">Year<select className="input !w-auto" value={year} onChange={e => setYear(e.target.value)}>{years.map(y => <option key={y}>{y}</option>)}</select></label>
       <span className="flex-1" />
-      <label className="label">Date<input type="date" className="input !w-[160px]" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} /></label>
+      <label className="label">Date<DateInput bare className="input !w-[160px]" value={f.date} onChange={v => setF({ ...f, date: v })} /></label>
       <label className="label">Region<select className="input !w-auto" value={f.region} onChange={e => setF({ ...f, region: e.target.value })}>{["NAT", "NSW", "VIC", "QLD", "SA", "WA", "TAS", "ACT", "NT"].map(r => <option key={r}>{r}</option>)}</select></label>
       <label className="label">Name<input className="input !w-[220px]" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="e.g. King's Birthday" /></label>
       <button className="btn btn-sm btn-primary" disabled={pending || !f.date} onClick={() => act(() => addHolidayAction(f), () => setF({ date: "", region: "NAT", name: "" }))}>Add holiday</button>

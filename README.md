@@ -83,7 +83,7 @@ Where this and the Spec disagree, the Decisions document wins. Implemented:
 - **Backups (hosted on Neon + object storage):** the database is backed up continuously with point-in-time restore
   (7 days on the free tier, 30 on paid); files in object storage are versioned. A restore is: pick the time in the Neon
   console → restore to a branch → point the app at it (minutes, not hours). A full restore test is part of go-live.
-- **Dates** show as "14 Oct 2026" in lists and DD/MM/YYYY in date boxes when the browser is set to Australian English.
+- **Dates** are DD/MM/YYYY in every date box whatever the browser locale (type 14/10/2026, or use the calendar button); lists show "14 Oct 2026".
 
 ## Migrating a business from Airtable
 

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import * as A from "@/actions";
 import { useToast } from "./Toast";
 import { Modal } from "./actionsClient";
+import { DateInput } from "./DateInput";
 import { CALL_OUTCOMES, type CallOutcome, type ChannelState } from "@/lib/commsTypes";
 
 function useAct() { const { report } = useToast(); const router = useRouter(); const [pending, start] = useTransition(); return { pending, act: (fn: () => Promise<A.ActionResult>, after?: (r: A.ActionResult) => void) => start(async () => { const r = await fn(); if (report(r)) { router.refresh(); after?.(r); } }) }; }
@@ -34,7 +35,7 @@ export function LogCallButton({ clientId, hasEmail, emailState, primary, outreac
     <button className={`btn ${primary ? "btn-primary" : ""}`} onClick={() => setOpen(true)}>{label}</button>
     {open && <Modal title="Log a call" onClose={() => setOpen(false)}>
       <div className="views mt-3">{CALL_OUTCOMES.map(o => <button key={o} type="button" className={outcome === o ? "on" : ""} onClick={() => setOutcome(o)}>{o}</button>)}</div>
-      {outcome === "Call back" && <label className="label mt-3">Call back on<input type="date" className="input !w-[180px]" value={cb} onChange={e => setCb(e.target.value)} /></label>}
+      {outcome === "Call back" && <label className="label mt-3">Call back on<DateInput bare className="input !w-[180px]" value={cb} onChange={setCb} /></label>}
       <label className="label mt-3">What was said<textarea className="input" rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder="Short note — this becomes the call note and updates Last Contact" /></label>
       {spoke && outreach && <div className="card mt-4 !py-3">
         <div className="font-semibold text-[14px] mb-1.5">Consent given on this call</div>

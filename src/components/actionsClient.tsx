@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import * as A from "@/actions";
 import * as R from "@/lib/rules";
 import { useToast } from "./Toast";
+import { DateInput } from "./DateInput";
 import { useOptions } from "./Options";
 
 function useAct() { const { report } = useToast(); const router = useRouter(); const [pending, start] = useTransition(); return { pending, act: (fn: () => Promise<A.ActionResult>, after?: (r: A.ActionResult) => void) => start(async () => { const r = await fn(); if (report(r)) { router.refresh(); after?.(r); } }) }; }
@@ -23,13 +24,13 @@ export function NoteBox({ clientId, claimId, placeholder, today }: { clientId: s
   return (
     <div>
       <textarea id={claimId ? `note-${claimId}` : "noteBox"} rows={3} className="input" placeholder={placeholder ?? "Type a note… Enter to save, Shift+Enter for a new line"} value={text} onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); save(); } }} disabled={pending} />
-      <div className="flex flex-wrap items-center gap-3 mt-2"><button className="btn btn-sm btn-primary" onClick={save} disabled={pending || !text.trim()}>Save note</button><label className="meta flex items-center gap-2">Dated <input type="date" className="input !h-8 !w-auto text-[13px]" value={date} onChange={e => setDate(e.target.value)} /></label><span className="meta">A note you write updates Last Contact.</span></div>
+      <div className="flex flex-wrap items-center gap-3 mt-2"><button className="btn btn-sm btn-primary" onClick={save} disabled={pending || !text.trim()}>Save note</button><label className="meta flex items-center gap-2">Dated <DateInput bare className="input !h-8 !w-[130px] text-[13px]" value={date} onChange={setDate} /></label><span className="meta">A note you write updates Last Contact.</span></div>
     </div>
   );
 }
 export function NoteDate({ noteId, value }: { noteId: string; value: string }) {
   const { act } = useAct();
-  return <input type="date" defaultValue={value} className="bg-transparent border-0 text-[13px] text-ink3 w-[120px]" title="Edit note date" onChange={e => e.target.value && act(() => A.updateNoteDateAction(noteId, e.target.value))} />;
+  return <DateInput bare className="bg-transparent border-0 text-[13px] text-ink3 w-[112px]" title="Edit note date" value={value} onChange={iso => iso && act(() => A.updateNoteDateAction(noteId, iso))} />;
 }
 export function LeadIdentifierSelect({ clientId, value }: { clientId: string; value: string | null }) {
   const { act, pending } = useAct();
@@ -37,7 +38,7 @@ export function LeadIdentifierSelect({ clientId, value }: { clientId: string; va
 }
 export function A2ASignedField({ clientId, value, label = "A2A Signed & Received" }: { clientId: string; value: string | null; label?: string }) {
   const { act, pending } = useAct(); const { toast } = useToast();
-  return <label className="label">{label}<input type="date" className="input" defaultValue={value ?? ""} disabled={pending} onChange={e => act(() => A.setA2ASignedAction(clientId, e.target.value || null), r => { if (r.ok && (r.data as { becameActive?: boolean })?.becameActive) toast("Lead is now Active and has a Client Code"); })} /></label>;
+  return <label className="label">{label}<DateInput value={value} disabled={pending} onChange={iso => act(() => A.setA2ASignedAction(clientId, iso || null), r => { if (r.ok && (r.data as { becameActive?: boolean })?.becameActive) toast("Lead is now Active and has a Client Code"); })} /></label>;
 }
 export function ProgressSelect({ claimId, value, org }: { claimId: string; value: number | null; org: string }) {
   const { act, pending } = useAct();
@@ -105,20 +106,20 @@ export function AddA2AButton({ claimId, today }: { claimId: string; today: strin
     <button className="btn btn-sm" onClick={() => setOpen(true)}>+ Add A2A</button>
     {open && <Modal title="Add A2A entry" onClose={() => setOpen(false)}>
       <p className="meta mb-3">Re-sending the Authority to Act for this same claim (e.g. a new address found, or ASIC requires its own copy). A newly found amount is opened as a new claim instead.</p>
-      <div className="grid2"><label className="label">Sent<input type="date" className="input" value={sent} onChange={e => setSent(e.target.value)} /></label><label className="label">Reason<select className="input" value={reason} onChange={e => setReason(e.target.value)}><option value="">(optional)</option>{O.a2aReasons.map(r => <option key={r}>{r}</option>)}</select></label></div>
+      <div className="grid2"><label className="label">Sent<DateInput value={sent} onChange={setSent} /></label><label className="label">Reason<select className="input" value={reason} onChange={e => setReason(e.target.value)}><option value="">(optional)</option>{O.a2aReasons.map(r => <option key={r}>{r}</option>)}</select></label></div>
       <div className="flex justify-end gap-2 mt-4"><button className="btn" onClick={() => setOpen(false)}>Cancel</button><button className="btn btn-primary" disabled={pending || !sent} onClick={() => act(() => A.addA2AEntryAction(claimId, sent, reason || null), () => setOpen(false))}>Add</button></div>
     </Modal>}
   </>;
 }
 export function A2ASignedInput({ entryId, value }: { entryId: string; value: string | null }) {
   const { act } = useAct();
-  return <input type="date" className="input !h-[30px] !w-[150px] text-[13px]" defaultValue={value ?? ""} title="Signed & Received" onChange={e => act(() => A.setA2AEntryAction(entryId, { signed: e.target.value || null }))} />;
+  return <DateInput bare className="input !h-[30px] !w-[150px] text-[13px]" value={value} title="Signed & Received" onChange={iso => act(() => A.setA2AEntryAction(entryId, { signed: iso || null }))} />;
 }
 export function AddResubmissionButton({ claimId, today }: { claimId: string; today: string }) {
   const [open, setOpen] = useState(false); const [d, setD] = useState(today); const { act, pending } = useAct();
   return <>
     <button className="btn btn-sm" onClick={() => setOpen(true)}>+ Add resubmission</button>
-    {open && <Modal title="Add resubmission" onClose={() => setOpen(false)}><label className="label">Date Resubmitted<input type="date" className="input" value={d} onChange={e => setD(e.target.value)} /></label><p className="meta mt-2">Sets Claim Progress to 9 · Resent to Holding Authority and restarts the authority follow-up clock.</p><div className="flex justify-end gap-2 mt-4"><button className="btn" onClick={() => setOpen(false)}>Cancel</button><button className="btn btn-primary" disabled={pending} onClick={() => act(() => A.addResubmissionAction(claimId, d), () => setOpen(false))}>Add</button></div></Modal>}
+    {open && <Modal title="Add resubmission" onClose={() => setOpen(false)}><label className="label">Date Resubmitted<DateInput value={d} onChange={setD} /></label><p className="meta mt-2">Sets Claim Progress to 9 · Resent to Holding Authority and restarts the authority follow-up clock.</p><div className="flex justify-end gap-2 mt-4"><button className="btn" onClick={() => setOpen(false)}>Cancel</button><button className="btn btn-primary" disabled={pending} onClick={() => act(() => A.addResubmissionAction(claimId, d), () => setOpen(false))}>Add</button></div></Modal>}
   </>;
 }
 export function MultiLink({ label, value, options, target, id }: { label: string; value: string[]; options: { id: string; name: string }[]; target: "companies" | "joint" | "related"; id: string }) {
@@ -130,7 +131,7 @@ export function AddSearchButton({ clientId, authorities, today }: { clientId: st
   const [open, setOpen] = useState(false); const [d, setD] = useState(today); const [sel, setSel] = useState<string[]>([]); const { act, pending } = useAct();
   return <>
     <button className="btn btn-sm" onClick={() => setOpen(true)}>Add search</button>
-    {open && <Modal title="Add search" onClose={() => setOpen(false)}><label className="label">Date searched<input type="date" className="input" value={d} onChange={e => setD(e.target.value)} /></label><div className="label mt-3">Found at<div className="flex flex-wrap gap-1.5">{authorities.map(a => <button key={a} type="button" className={`chip cursor-pointer ${sel.includes(a) ? "chip-lime" : ""}`} onClick={() => setSel(s => s.includes(a) ? s.filter(x => x !== a) : [...s, a])}>{a}</button>)}</div></div><div className="flex justify-end gap-2 mt-4"><button className="btn" onClick={() => setOpen(false)}>Cancel</button><button className="btn btn-primary" disabled={pending} onClick={() => act(() => A.addSearchLogAction(clientId, d, sel), () => { setOpen(false); setSel([]); })}>Add</button></div></Modal>}
+    {open && <Modal title="Add search" onClose={() => setOpen(false)}><label className="label">Date searched<DateInput value={d} onChange={setD} /></label><div className="label mt-3">Found at<div className="flex flex-wrap gap-1.5">{authorities.map(a => <button key={a} type="button" className={`chip cursor-pointer ${sel.includes(a) ? "chip-lime" : ""}`} onClick={() => setSel(s => s.includes(a) ? s.filter(x => x !== a) : [...s, a])}>{a}</button>)}</div></div><div className="flex justify-end gap-2 mt-4"><button className="btn" onClick={() => setOpen(false)}>Cancel</button><button className="btn btn-primary" disabled={pending} onClick={() => act(() => A.addSearchLogAction(clientId, d, sel), () => { setOpen(false); setSel([]); })}>Add</button></div></Modal>}
   </>;
 }
 export function BinButton({ kind, id, restore }: { kind: "client" | "claim"; id: string; restore?: boolean }) {

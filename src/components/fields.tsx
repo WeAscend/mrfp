@@ -1,6 +1,7 @@
 "use client";
 // Auto-saving fields: edit, blur/change, saved. Each one calls the matching server action and reports the result.
 import { useState, useTransition } from "react";
+import { DateInput } from "./DateInput";
 import { useRouter } from "next/navigation";
 import { updateClientFieldAction, updateClaimFieldAction } from "@/actions";
 import { useToast } from "./Toast";
@@ -24,7 +25,7 @@ export function TextField({ kind, id, field, label, value, placeholder, type = "
 }
 export function DateField(p: Base & { value: string | null | undefined }) {
   const [v, setV] = useState(p.value ?? ""); const { save, pending } = useSave(p.kind, p.id);
-  const input = <input type="date" className={`input ${pending ? "opacity-60" : ""} ${p.label ? "" : p.className ?? ""}`} value={v} disabled={p.disabled} onChange={e => { setV(e.target.value); if (e.target.value !== (p.value ?? "")) save(p.field, e.target.value || null, p.onSaved); }} />;
+  const input = <DateInput className={`${pending ? "opacity-60" : ""} ${p.label ? "" : p.className ?? ""}`} value={v} disabled={p.disabled} onChange={iso => { setV(iso); save(p.field, iso || null, p.onSaved); }} />;
   return p.label ? <label className={`label ${p.className ?? ""}`}>{p.label}{input}{p.hint && <span className="meta font-normal">{p.hint}</span>}</label> : input;
 }
 export function TextArea({ kind, id, field, label, value, rows = 2, placeholder, className, lines }: Base & { value: string | string[] | null | undefined; rows?: number; placeholder?: string; lines?: boolean }) {
