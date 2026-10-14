@@ -10,7 +10,8 @@
     "test": "vitest run",
     "db:migrate": "drizzle-kit migrate",
     "db:generate": "drizzle-kit generate",
-    "seed": "tsx scripts/seed-dev.ts --dir test-data/airtable_export_FAKE"
+    "seed": "tsx scripts/seed-dev.ts --dir test-data/airtable_export_FAKE",
+    "vercel-build": "drizzle-kit migrate && next build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1150.0",

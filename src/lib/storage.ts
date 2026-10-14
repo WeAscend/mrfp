@@ -29,7 +29,7 @@ class S3Driver implements StorageDriver {
 let driver: StorageDriver | null = null;
 export function storage(): StorageDriver {
   if (driver) return driver;
-  driver = process.env.STORAGE_DRIVER === "s3" ? new S3Driver(process.env.S3_BUCKET!) : new LocalDriver(process.env.STORAGE_LOCAL_DIR || "./storage");
+  driver = process.env.STORAGE_DRIVER === "s3" ? new S3Driver(process.env.S3_BUCKET!) : new LocalDriver(process.env.STORAGE_LOCAL_DIR || (process.env.VERCEL ? "/tmp/mrfp-storage" : "./storage"));
   return driver;
 }
 export const safeName = (n: string) => n.replace(/[^A-Za-z0-9._ -]/g, "_").slice(0, 120);

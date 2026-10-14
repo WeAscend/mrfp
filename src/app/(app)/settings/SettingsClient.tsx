@@ -1,7 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updateTemplateAction, createTemplateAction, deleteTemplateAction, addHolidayAction, removeHolidayAction, updateAuthorityAction, upsertCompanyAction, addMemberAction, updateOrgAction, type ActionResult } from "@/actions";
+import { loadSampleDataAction, updateTemplateAction, createTemplateAction, deleteTemplateAction, addHolidayAction, removeHolidayAction, updateAuthorityAction, upsertCompanyAction, addMemberAction, updateOrgAction, type ActionResult } from "@/actions";
 import { OPTION_SETS, type Options } from "@/lib/options";
 import type { HoldingAuthority, OriginatingCompany, Organisation } from "@/db/schema";
 import { useToast } from "@/components/Toast";
@@ -124,3 +124,5 @@ export function HolidayAdmin({ rows }: { rows: { date: string; region: string; n
     </tbody></table></div>
   </div>;
 }
+
+export function LoadSampleButton() { const { act, pending } = useAct(); return <button className="btn" disabled={pending} onClick={() => { if (confirm("Load the sample data pack (20 fake clients, 9 claims) into this organisation?")) act(() => loadSampleDataAction()); }}>{pending ? "Loading…" : "Load sample data"}</button>; }

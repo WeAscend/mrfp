@@ -209,3 +209,12 @@ export async function migrateAirtable(t: Tenant, files: MigrationFiles, ownerCod
     return { counts: { clients: created.length, claims: claimsCreated, authorities: has.length, companies: companiesCreated, expectedClients, expectedClaims: claimRows.length }, checklist, warnings };
   });
 }
+
+import fs from "fs";
+import path from "path";
+/** The bundled FAKE Airtable export (test-data/), as migration input — for a first look at the app before the real export. */
+export function readTestPack(): MigrationFiles {
+  const dir = path.join(process.cwd(), "test-data", "airtable_export_FAKE");
+  const read = (f: string) => fs.readFileSync(path.join(dir, f), "utf8");
+  return { clients: read("Clients_FAKE.csv"), leads: read("Leads_FAKE.csv"), claims: read("Claims_FAKE.csv"), haoc: read("Holding_Authorities_Originating_Companies_FAKE.csv") };
+}

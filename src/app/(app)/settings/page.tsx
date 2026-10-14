@@ -11,7 +11,7 @@ import { listForms, SOURCES } from "@/lib/services/forms";
 import { FormUpload, FormMapper } from "./FormsAdmin";
 import * as R from "@/lib/rules";
 import { Empty } from "@/components/ui";
-import { AuthorityRow, CompanyForm, AddUserForm, OrgForm, OutreachForm, OutreachSwitch, TemplateEditor, NewTemplateForm, DropdownEditor, DefaultOwnerSelect, HolidayAdmin } from "./SettingsClient";
+import { AuthorityRow, CompanyForm, AddUserForm, OrgForm, OutreachForm, OutreachSwitch, TemplateEditor, NewTemplateForm, DropdownEditor, DefaultOwnerSelect, HolidayAdmin, LoadSampleButton } from "./SettingsClient";
 import { templates } from "@/lib/services/comms";
 import { PLACEHOLDERS, DEFAULT_TEMPLATES } from "@/lib/templates";
 import { mailDriver } from "@/lib/mail";
@@ -68,7 +68,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <div className="mt-5 flex flex-wrap items-center gap-3"><div><div className="font-semibold text-[14px]">Default owner for new records</div><div className="meta">Every new lead, import and migrated record is owned by this user; only an Admin can change Owner (Decisions 2.6).</div></div><DefaultOwnerSelect value={t.org.defaultOwnerCode} codes={ms.filter(m => m.active).map(m => m.userCode)} /></div>
       <h2 className="mt-5">Add user</h2><AddUserForm /></div>;
   } else if (tab === "org") {
-    body = <div className="card"><h2>Organisation</h2><OrgForm org={t.org} /></div>;
+    const nClients = await db.$count(schema.clients, eq(schema.clients.orgId, t.org.id));
+    body = <><div className="card"><h2>Organisation</h2><OrgForm org={t.org} /></div>
+      {nClients === 0 && <div className="card mt-5"><h2>Sample data</h2><p className="meta mb-3">Nothing here yet. Load the fake test pack (20 clients, 9 claims, the standard authorities) to walk through the app. It can be deleted again from the Bin, and the real Airtable migration replaces it.</p><LoadSampleButton /></div>}</>;
   } else {
     const cs = await db.query.clients.findMany({ where: (c, { and, eq, isNotNull }) => and(eq(c.orgId, t.org.id), isNotNull(c.deletedAt)) });
     const ks = await db.query.claims.findMany({ where: (k, { and, eq, isNotNull }) => and(eq(k.orgId, t.org.id), isNotNull(k.deletedAt)), with: { client: true } });

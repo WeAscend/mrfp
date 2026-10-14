@@ -12,6 +12,7 @@ import * as Org from "@/lib/services/org";
 import * as Imp from "@/lib/services/leadImport";
 import * as Comms from "@/lib/services/comms";
 import * as Forms from "@/lib/services/forms";
+import { migrateAirtable, readTestPack } from "@/lib/services/migration";
 import { db, schema } from "@/db";
 import { storage, safeName } from "@/lib/storage";
 import { logActivity } from "@/lib/tenant";
@@ -105,3 +106,10 @@ export async function addFormAction(form: FormData) {
 }
 export async function updateFormAction(id: string, patch: { name?: string; mapping?: Record<string, string>; scope?: "CLAIM" | "CLIENT" }) { const t = await requireAdmin(); const r = await run(() => Forms.updateForm(t, id, patch), "Form saved"); refresh(); return r; }
 export async function removeFormAction(id: string) { const t = await requireAdmin(); const r = await run(() => Forms.removeForm(t, id), "Form removed"); refresh(); return r; }
+
+/** First-look sample data: migrates the bundled FAKE export into an empty organisation. Refused once any client exists. */
+export async function loadSampleDataAction() {
+  const t = await requireAdmin();
+  const r = await run(async () => { const n = await db.$count(schema.clients, eq(schema.clients.orgId, t.org.id)); if (n > 0) throw new Error("Sample data can only be loaded into an empty organisation"); return migrateAirtable(t, readTestPack()); }, "Sample data loaded");
+  refresh(); return r;
+}
